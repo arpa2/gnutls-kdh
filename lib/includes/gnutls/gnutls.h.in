@@ -39,6 +39,8 @@
 /* Get size_t. */
 #include <stddef.h>
 /* Get ssize_t. */
+/* Get uint32_t. */
+#include <stdint.h>
 #ifndef HAVE_SSIZE_T
 #define HAVE_SSIZE_T
 /* *INDENT-OFF* */
