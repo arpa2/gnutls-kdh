@@ -711,7 +711,7 @@ unpack_psk_auth_info(gnutls_session_t session, gnutls_buffer_st * ps)
  *            -------------------
  *                MAX: 169 bytes
  *
- */
+ */ // this format does not match the actual implementation?!
 static int
 pack_security_parameters(gnutls_session_t session, gnutls_buffer_st * ps)
 {
@@ -746,6 +746,10 @@ pack_security_parameters(gnutls_session_t session, gnutls_buffer_st * ps)
 	BUFFER_APPEND_NUM(ps,
 			  session->security_parameters.compression_method);
 	BUFFER_APPEND_NUM(ps, session->security_parameters.cert_type);
+	// ARPA2 added by TomV for TLS-KDH:
+	BUFFER_APPEND_NUM(ps, session->security_parameters.client_cert_type);
+	BUFFER_APPEND_NUM(ps, session->security_parameters.server_cert_type);
+	// end
 	BUFFER_APPEND_NUM(ps, session->security_parameters.pversion->id);
 
 	BUFFER_APPEND(ps, session->security_parameters.master_secret,
@@ -820,6 +824,14 @@ unpack_security_parameters(gnutls_session_t session, gnutls_buffer_st * ps)
 	BUFFER_POP_NUM(ps,
 		       session->internals.resumed_security_parameters.
 		       cert_type);
+	// ARPA2 added by TomV for TLS-KDH:
+	BUFFER_POP_NUM(ps, 
+					 session->internals.resumed_security_parameters.
+					 client_cert_type);
+	BUFFER_POP_NUM(ps, 
+					 session->internals.resumed_security_parameters.
+					 server_cert_type);
+	// end
 	BUFFER_POP_NUM(ps, version);
 	session->internals.resumed_security_parameters.pversion =
 	    version_to_entry(version);

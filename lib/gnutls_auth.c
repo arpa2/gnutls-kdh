@@ -226,7 +226,12 @@ gnutls_auth_server_get_type(gnutls_session_t session)
 	return
 	    _gnutls_map_kx_get_cred(_gnutls_cipher_suite_get_kx_algo
 				    (session->security_parameters.
-				     cipher_suite), 1);
+				     cipher_suite), 1); 
+				     /* REMARK: why not use here the GNUTLS_SERVER constant as 
+				      * last param for clarity? According to the current implementation
+				      * the target function needs minor adaptation but it definitely
+				      * improves code readability
+				      */
 }
 
 /**
@@ -246,8 +251,13 @@ gnutls_auth_client_get_type(gnutls_session_t session)
 	return
 	    _gnutls_map_kx_get_cred(_gnutls_cipher_suite_get_kx_algo
 				    (session->security_parameters.
-				     cipher_suite), 0);
-}
+				     cipher_suite), 0); 
+				     /* REMARK: why not use here the GNUTLS_CLIENT constant as 
+				      * last param for clarity? According to the current implementation
+				      * the target function needs minor adaptation but it definitely
+				      * improves code readability
+				      */
+} 
 
 
 /* 
@@ -393,8 +403,8 @@ _gnutls_auth_info_set(gnutls_session_t session,
 		if (allow_change == 0) {
 			/* If the credentials for the current authentication scheme,
 			 * are not the one we want to set, then it's an error.
-			 * This may happen if a rehandshake is performed an the
-			 * ciphersuite which is negotiated has different authentication
+			 * This may happen if a rehandshake is performed and the
+			 * ciphersuite which is negotiated has a different authentication
 			 * schema.
 			 */
 			if (type != session->key.auth_info_type) {

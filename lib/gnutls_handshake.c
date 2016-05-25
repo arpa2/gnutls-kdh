@@ -174,6 +174,12 @@ static int resume_copy_required_values(gnutls_session_t session)
 
 	session->security_parameters.cert_type =
 	    session->internals.resumed_security_parameters.cert_type;
+	// ARPA2 added by TomV for TLS-KDH:
+	session->security_parameters.client_cert_type =
+	    session->internals.resumed_security_parameters.client_cert_type;
+	session->security_parameters.server_cert_type =
+	    session->internals.resumed_security_parameters.server_cert_type;
+	// end
 
 	memcpy(session->security_parameters.session_id,
 	       session->internals.resumed_security_parameters.session_id,
@@ -339,6 +345,11 @@ _gnutls_finished(gnutls_session_t session, int type, void *ret,
 {
 	const int siz = TLS_MSG_LEN;
 	uint8_t concat[MAX_HASH_SIZE + 16 /*MD5 */ ];
+	/* ARPA2 added by TomV for TLS-KDH:
+	 * Added draft support for variable verify_data length.
+	 */
+	uint16_t verify_data_length;
+	/* end */
 	size_t hash_len;
 	const char *mesg;
 	int rc, len;
@@ -387,10 +398,20 @@ _gnutls_finished(gnutls_session_t session, int type, void *ret,
 		mesg = CLIENT_MSG;
 	}
 
+	/* ARPA2 added by TomV for TLS-KDH:
+	 * Returns the verify_data_length property of a ciphersuite entry.
+	 * 
+	 * Added for draft support for variable verify_data length.
+	 */
+	verify_data_length = _gnutls_cipher_suite_get_verify_data_len(
+													session->security_parameters.cipher_suite);
+	
+
 	return _gnutls_PRF(session,
 			   session->security_parameters.master_secret,
 			   GNUTLS_MASTER_SIZE, mesg, siz, concat, hash_len,
-			   12, ret);
+			   verify_data_length, ret);
+	/* end */
 }
 
 
@@ -686,6 +707,7 @@ static int _gnutls_send_finished(gnutls_session_t session, int again)
 {
 	mbuffer_st *bufel;
 	uint8_t *data;
+	uint16_t verify_data_length;
 	int ret;
 	size_t vdata_size = 0;
 	const version_entry_st *vers;
@@ -710,20 +732,45 @@ static int _gnutls_send_finished(gnutls_session_t session, int again)
 						  session->
 						  security_parameters.
 						  entity, data, 1);
-			_mbuffer_set_udata_size(bufel, 36);
+			_mbuffer_set_udata_size(bufel, VERIFY_DATA_LEN_SSL3);
 		} else {	/* TLS 1.0+ */
 			ret = _gnutls_finished(session,
 					       session->
 					       security_parameters.entity,
 					       data, 1);
-			_mbuffer_set_udata_size(bufel, 12);
+					       
+			/* ARPA2 added by TomV for TLS-KDH:
+			 * Returns the verify_data_length property of a ciphersuite entry.
+			 * 
+			 * Added for draft support for variable verify_data length.
+			 * 
+			 * Note: additional work needs to be done to conform to the 
+			 * following extension https://tools.ietf.org/html/draft-mavrogiannopoulos-tls-more-extensions-00#section-3
+			 */
+			verify_data_length = _gnutls_cipher_suite_get_verify_data_len(
+														session->security_parameters.cipher_suite);
+														
+			if(verify_data_length == VERIFY_DATA_LEN_UNKNOWN ||
+				 verify_data_length < MIN_VERIFY_DATA_SIZE) {
+				// Default of tls 1.2 equals the values for tls 1.0 and tls 1.1
+				verify_data_length = DEFAULT_VERIFY_DATA_LEN_TLS1_2;
+			}
+		
+			_mbuffer_set_udata_size(bufel, verify_data_length);
+			/* end */
 		}
 
 		if (ret < 0) {
 			gnutls_assert();
 			return ret;
 		}
-
+		/*
+		 * REMARK:
+		 * Why do we call an extra function to get the size of bufel if we 
+		 * can also set the value for vdata_size in the branches above where 
+		 * we set the size of bufel? Can the size of bufel be altered 
+		 * elsewhere meanwhile?
+		 */
 		vdata_size = _mbuffer_get_udata_size(bufel);
 
 		ret =
@@ -767,7 +814,7 @@ static int _gnutls_recv_finished(gnutls_session_t session)
 {
 	uint8_t data[MAX_VERIFY_DATA_SIZE], *vrfy;
 	gnutls_buffer_st buf;
-	int data_size;
+	uint16_t verify_data_length;
 	int ret;
 	int vrfy_size;
 	const version_entry_st *vers = get_version(session);
@@ -788,11 +835,28 @@ static int _gnutls_recv_finished(gnutls_session_t session)
 	vrfy_size = buf.length;
 
 	if (vers->id == GNUTLS_SSL3)
-		data_size = 36;
-	else
-		data_size = 12;
+		verify_data_length = VERIFY_DATA_LEN_SSL3;
+	else { /* TLS 1.0+ */
+		/* ARPA2 added by TomV for TLS-KDH:
+		 * Returns the verify_data_length property of a ciphersuite entry.
+		 * 
+		 * Added for draft support for variable verify_data length.
+		 * 
+		 * Note: additional work needs to be done to conform to the 
+		 * following extension https://tools.ietf.org/html/draft-mavrogiannopoulos-tls-more-extensions-00#section-3
+		 */
+		verify_data_length = _gnutls_cipher_suite_get_verify_data_len(
+														session->security_parameters.cipher_suite);
+														
+		if(verify_data_length == VERIFY_DATA_LEN_UNKNOWN ||
+			 verify_data_length < MIN_VERIFY_DATA_SIZE) {
+			// Default of tls 1.2 equals the values for tls 1.0 and tls 1.1
+			verify_data_length = DEFAULT_VERIFY_DATA_LEN_TLS1_2;
+		}
+		/* end */
+	}
 
-	if (vrfy_size != data_size) {
+	if (vrfy_size != verify_data_length) {
 		gnutls_assert();
 		ret = GNUTLS_E_ERROR_IN_FINISHED_PACKET;
 		goto cleanup;
@@ -803,7 +867,7 @@ static int _gnutls_recv_finished(gnutls_session_t session)
 		    _gnutls_ssl3_finished(session,
 					  (session->security_parameters.
 					   entity + 1) % 2, data, 0);
-	} else {		/* TLS 1.0 */
+	} else {		/* TLS 1.0+ */
 		ret =
 		    _gnutls_finished(session,
 				     (session->security_parameters.entity +
@@ -815,13 +879,13 @@ static int _gnutls_recv_finished(gnutls_session_t session)
 		goto cleanup;
 	}
 
-	if (memcmp(vrfy, data, data_size) != 0) {
+	if (memcmp(vrfy, data, verify_data_length) != 0) {
 		gnutls_assert();
 		ret = GNUTLS_E_ERROR_IN_FINISHED_PACKET;
 		goto cleanup;
 	}
 
-	ret = _gnutls_ext_sr_finished(session, data, data_size, 1);
+	ret = _gnutls_ext_sr_finished(session, data, verify_data_length, 1);
 	if (ret < 0) {
 		gnutls_assert();
 		goto cleanup;
@@ -834,8 +898,8 @@ static int _gnutls_recv_finished(gnutls_session_t session)
 		/* if we are a client resuming - or we are a server not resuming */
 		_gnutls_handshake_log
 		    ("HSK[%p]: recording tls-unique CB (recv)\n", session);
-		memcpy(session->internals.cb_tls_unique, data, data_size);
-		session->internals.cb_tls_unique_len = data_size;
+		memcpy(session->internals.cb_tls_unique, data, verify_data_length);
+		session->internals.cb_tls_unique_len = verify_data_length;
 	}
 
 
@@ -3444,6 +3508,6 @@ int _gnutls_handshake_get_session_hash(gnutls_session_t session, gnutls_datum_t 
 
 		_gnutls_hash_deinit(&td_md5, concat);
 
-		return _gnutls_set_datum(shash, concat, 36);
+		return _gnutls_set_datum(shash, concat, VERIFY_DATA_LEN_SSL3);
 	}
 }

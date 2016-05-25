@@ -344,7 +344,7 @@ gnutls_certificate_server_set_request(gnutls_session_t session,
  * number of certificates should be set to zero. The value (-1)
  * indicates error and the handshake will be terminated. If both certificates
  * are set in the credentials and a callback is available, the callback
- * takes predence.
+ * takes precedence.
  *
  * Since: 3.0
  **/
@@ -396,7 +396,7 @@ void gnutls_certificate_set_retrieve_function
  * number of certificates should be set to zero. The value (-1)
  * indicates error and the handshake will be terminated. If both certificates
  * are set in the credentials and a callback is available, the callback
- * takes predence.
+ * takes precedence.
  *
  * Since: 3.0
  **/

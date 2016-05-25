@@ -47,6 +47,9 @@
 #define PK_DSA_OID "1.2.840.10040.4.1"
 #define PK_GOST_R3410_94_OID "1.2.643.2.2.20"
 #define PK_GOST_R3410_2001_OID "1.2.643.2.2.19"
+// ARPA2 added by TomV for TLS-KDH:
+#define PK_KDH_OID "1.3.6.1.4.1.44469.666.509.88.1.1.1"
+// end
 
 /* signature OIDs
  */
@@ -68,6 +71,12 @@
 #define SIG_GOST_R3410_94_OID "1.2.643.2.2.4"
 #define SIG_GOST_R3410_2001_OID "1.2.643.2.2.3"
 #define ISO_SIG_RSA_SHA1_OID "1.3.14.3.2.29"
+
+// ARPA2 added by TomV for TLS-KDH: 
+#define SIG_KDH_SHA256_OID "1.3.6.1.4.1.44469.666.509.88.1.2.2.16.840.1.101.3.4.2.1"
+#define SIG_KDH_SHA384_OID "1.3.6.1.4.1.44469.666.509.88.1.2.2.16.840.1.101.3.4.2.2"
+#define SIG_KDH_SHA512_OID "1.3.6.1.4.1.44469.666.509.88.1.2.2.16.840.1.101.3.4.2.3"
+// end
 
 #define XMPP_OID "1.3.6.1.5.5.7.8.5"
 

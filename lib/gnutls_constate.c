@@ -386,6 +386,8 @@ int _gnutls_epoch_set_keys(gnutls_session_t session, uint16_t epoch)
 	memcpy( dst->session_id, src->session_id, GNUTLS_MAX_SESSION_ID_SIZE); \
 	dst->session_id_size = src->session_id_size; \
 	dst->cert_type = src->cert_type; \
+	dst->client_cert_type = src->client_cert_type; \
+	dst->server_cert_type = src->server_cert_type; \
 	dst->compression_method = src->compression_method; \
 	dst->timestamp = src->timestamp; \
 	dst->ext_master_secret = src->ext_master_secret; \

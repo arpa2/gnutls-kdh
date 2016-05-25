@@ -53,6 +53,9 @@ typedef struct gnutls_certificate_credentials_st {
 	/* private keys. It contains ncerts private
 	 * keys. pkey[i] corresponds to certificate in
 	 * cert_list[i][0].
+	 * 
+	 * REMARK: The above comment is incorrect.
+	 * pkey[i] corresponds to certs[i].cert_list[0]
 	 */
 
 #ifdef ENABLE_OPENPGP
@@ -141,9 +144,9 @@ int _gnutls_get_auth_info_pcert(gnutls_pcert_st * gcert,
 
 int certificate_credential_append_crt_list(gnutls_certificate_credentials_t
 					   res, gnutls_str_array_t names,
-					   gnutls_pcert_st * crt, int nr);
+					   gnutls_pcert_st * crt, int nr); // why deviate from naming convention for function? no _gnutls prefix
 int certificate_credentials_append_pkey(gnutls_certificate_credentials_t
-					res, gnutls_privkey_t pkey);
+					res, gnutls_privkey_t pkey); // why deviate from naming convention for function? no _gnutls prefix
 
 int _gnutls_selected_cert_supported_kx(struct gnutls_session_int *session,
 				       gnutls_kx_algorithm_t * alg,

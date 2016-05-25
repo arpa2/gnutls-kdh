@@ -89,7 +89,7 @@ _gnutls_cert_type_recv_params(gnutls_session_t session,
 			/* Check if we support this cert_type */
 			if ((ret =
 			     _gnutls_session_cert_type_supported(session,
-								 new_type))
+								 new_type, false, CTYPE_IGNORE ))
 			    < 0) {
 				gnutls_assert();
 				return ret;
@@ -116,7 +116,7 @@ _gnutls_cert_type_recv_params(gnutls_session_t session,
 				/* Check if we support this cert_type */
 				if ((ret =
 				     _gnutls_session_cert_type_supported
-				     (session, new_type)) < 0) {
+				     (session, new_type, true, CTYPE_IGNORE)) < 0) {
 					gnutls_assert();
 					continue;
 				} else
@@ -131,7 +131,7 @@ _gnutls_cert_type_recv_params(gnutls_session_t session,
 
 			if ((ret =
 			     _gnutls_session_cert_type_supported(session,
-								 new_type))
+								 new_type, true, CTYPE_IGNORE))
 			    < 0) {
 				gnutls_assert();
 				/* The peer has requested unsupported certificate
