@@ -173,6 +173,9 @@ typedef enum gnutls_cipher_algorithm {
  * @GNUTLS_KX_DHE_PSK: DHE-PSK key-exchange algorithm.
  * @GNUTLS_KX_ECDHE_PSK: ECDHE-PSK key-exchange algorithm.
  * @GNUTLS_KX_RSA_PSK: RSA-PSK key-exchange algorithm.
+ * 
+ * ARPA2 added by TomV & RickvR for TLS-KDH:
+ * @GNUTLS_KX_ECDHE_KDH: ECDHE-KDH key-exchange algorithm.
  *
  * Enumeration of different key exchange algorithms.
  */
@@ -192,7 +195,13 @@ typedef enum {
 	GNUTLS_KX_ECDHE_RSA = 12,
 	GNUTLS_KX_ECDHE_ECDSA = 13,
 	GNUTLS_KX_ECDHE_PSK = 14,
-	GNUTLS_KX_RSA_PSK = 15
+	GNUTLS_KX_RSA_PSK = 15,
+	// ARPA2 added by TomV & RickvR for TLS-KDH:
+	GNUTLS_KX_ECDHE_KDH = 16,
+	GNUTLS_KX_ECDHE_KDH_RSA = 17,
+	GNUTLS_KX_ECDHE_KDH_ECDSA = 18,
+	GNUTLS_KX_ECDHE_KDH_DSA = 19,
+	// end
 } gnutls_kx_algorithm_t;
 
 /**
@@ -593,6 +602,7 @@ typedef enum {
  * @GNUTLS_CRT_X509: X.509 Certificate.
  * @GNUTLS_CRT_OPENPGP: OpenPGP certificate.
  * @GNUTLS_CRT_RAW: Raw public key (SubjectPublicKey)
+ * @GNUTLS_CRT_KRB: Kerberos ticket
  *
  * Enumeration of different certificate types.
  */
@@ -600,7 +610,10 @@ typedef enum {
 	GNUTLS_CRT_UNKNOWN = 0,
 	GNUTLS_CRT_X509 = 1,
 	GNUTLS_CRT_OPENPGP = 2,
-	GNUTLS_CRT_RAW = 3
+	GNUTLS_CRT_RAW = 3,
+	// ARPA2 added by TomV for TLS-KDH
+	GNUTLS_CRT_KRB = 224
+	// end
 } gnutls_certificate_type_t;
 
 /**
@@ -614,6 +627,20 @@ typedef enum {
 	GNUTLS_X509_FMT_DER = 0,
 	GNUTLS_X509_FMT_PEM = 1
 } gnutls_x509_crt_fmt_t;
+
+// ARPA2 added by TomV for TLS-KDH:
+/**
+ * gnutls_krb_crt_fmt_t:
+ * @GNUTLS_KRB_FMT_DER: TODO (binary).
+ * @GNUTLS_KRB_FMT_PEM: TODO (text).
+ *
+ * Enumeration of different certificate encoding formats.
+ */
+typedef enum {
+	GNUTLS_KRB_FMT_DER = 0,
+	GNUTLS_KRB_FMT_PEM = 1
+} gnutls_krb_crt_fmt_t;
+// end
 
 /**
  * gnutls_certificate_print_formats_t:
@@ -641,6 +668,7 @@ typedef enum gnutls_certificate_print_formats {
  * @GNUTLS_PK_DSA: DSA public-key algorithm.
  * @GNUTLS_PK_DH: Diffie-Hellman algorithm. Used to generate parameters.
  * @GNUTLS_PK_EC: Elliptic curve algorithm. Used to generate parameters.
+ * @GNUTLS_PK_KDH: TODO comment
  *
  * Enumeration of different public-key algorithms.
  */
@@ -649,7 +677,10 @@ typedef enum {
 	GNUTLS_PK_RSA = 1,
 	GNUTLS_PK_DSA = 2,
 	GNUTLS_PK_DH = 3,
-	GNUTLS_PK_EC = 4
+	GNUTLS_PK_EC = 4,
+	// ARPA2 added by TomV for TLS-KDH: 
+	GNUTLS_PK_KDH = 5
+	// end
 } gnutls_pk_algorithm_t;
 
 const char *gnutls_pk_algorithm_get_name(gnutls_pk_algorithm_t algorithm);
@@ -677,6 +708,9 @@ const char *gnutls_pk_algorithm_get_name(gnutls_pk_algorithm_t algorithm);
  * @GNUTLS_SIGN_ECDSA_SHA384: Digital signature algorithm ECDSA with SHA-384.
  * @GNUTLS_SIGN_ECDSA_SHA512: Digital signature algorithm ECDSA with SHA-512.
  * @GNUTLS_SIGN_ECDSA_SHA224: Digital signature algorithm ECDSA with SHA-224.
+ * @GNUTLS_SIGN_KDH_SHA256: Kerberos authenticator with SHA256.
+ * @GNUTLS_SIGN_KDH_SHA384: Kerberos authenticator with SHA384.
+ * @GNUTLS_SIGN_KDH_SHA512: Kerberos authenticator with SHA512.
  *
  * Enumeration of different digital signature algorithms.
  */
@@ -701,7 +735,12 @@ typedef enum {
 	GNUTLS_SIGN_ECDSA_SHA384 = 15,
 	GNUTLS_SIGN_ECDSA_SHA512 = 16,
 	GNUTLS_SIGN_DSA_SHA384 = 17,
-	GNUTLS_SIGN_DSA_SHA512 = 18
+	GNUTLS_SIGN_DSA_SHA512 = 18,
+	// ARPA2 added by TomV for TLS-KDH:
+	GNUTLS_SIGN_KDH_SHA256 = 19,
+	GNUTLS_SIGN_KDH_SHA384 = 20,
+	GNUTLS_SIGN_KDH_SHA512 = 21
+	// end
 } gnutls_sign_algorithm_t;
 
 /**
@@ -856,6 +895,12 @@ gnutls_compression_method_t
 gnutls_compression_get(gnutls_session_t session);
 gnutls_certificate_type_t
 gnutls_certificate_type_get(gnutls_session_t session);
+// ARPA2 added by TomV for TLS-KDH:
+gnutls_certificate_type_t
+gnutls_client_certificate_type_get(gnutls_session_t session);
+gnutls_certificate_type_t
+gnutls_server_certificate_type_get(gnutls_session_t session);
+// end
 
 int gnutls_sign_algorithm_get(gnutls_session_t session);
 int gnutls_sign_algorithm_get_client(gnutls_session_t session);
@@ -1153,6 +1198,17 @@ int gnutls_alpn_get_selected_protocol(gnutls_session_t session,
 int gnutls_alpn_set_protocols(gnutls_session_t session,
 			      const gnutls_datum_t * protocols,
 			      unsigned protocols_size, unsigned flags);
+
+// ARPA2 added by TomV for TLS-KDH:		      
+/* KDH Ticket Request Flags extension */
+typedef struct {
+	uint32_t krb_flags;
+	uint32_t tlskdh_flags;
+} gnutls_kdh_trf_t;
+
+int gnutls_kdh_trf_get( gnutls_session_t session, gnutls_kdh_trf_t *flags );
+int gnutls_kdh_trf_set( gnutls_session_t session, gnutls_kdh_trf_t flags );
+// end
 
 int gnutls_key_generate(gnutls_datum_t * key, unsigned int key_size);
 
@@ -1569,11 +1625,11 @@ int gnutls_certificate_set_x509_crl(gnutls_certificate_credentials_t res,
 
 int gnutls_certificate_get_x509_key(gnutls_certificate_credentials_t res,
                                     unsigned index,
-                                    gnutls_x509_privkey_t *key);
+                                    gnutls_x509_privkey_t *key); //REMARK: why is this func defined twice?
 int gnutls_certificate_get_x509_crt(gnutls_certificate_credentials_t res,
                                     unsigned index,
                                     gnutls_x509_crt_t **crt_list,
-                                    unsigned *crt_list_size);
+                                    unsigned *crt_list_size); //REMARK: why is this func defined twice?
 
   /* OCSP status request extension, RFC 6066 */
 typedef int (*gnutls_status_request_ocsp_func)
@@ -1601,6 +1657,22 @@ int gnutls_ocsp_status_request_get(gnutls_session_t session,
 #define GNUTLS_OCSP_SR_IS_AVAIL 1
 int gnutls_ocsp_status_request_is_checked(gnutls_session_t session,
 					  unsigned int flags);
+
+// ARPA2 added by TomV for TLS-KDH:					  
+/* KDH functions */
+/* REMARK: maybe place these prototypes in a seperate directory / file in the future?
+ * Just like openpgp stuff
+ */
+int gnutls_certificate_set_krb_ticket( gnutls_certificate_credentials_t cred,
+																	const gnutls_datum_t ticket );
+ 
+int gnutls_certificate_get_krb_ticket(gnutls_certificate_credentials_t cred,
+                                unsigned index,
+                                gnutls_x509_crt_t **crt_list,
+                                unsigned *crt_list_size);
+
+//TODO future: add functions for raw certificates
+// end
 
 /* global state functions
  */
@@ -1996,7 +2068,10 @@ typedef enum {
 	GNUTLS_PRIVKEY_X509,
 	GNUTLS_PRIVKEY_OPENPGP,
 	GNUTLS_PRIVKEY_PKCS11,
-	GNUTLS_PRIVKEY_EXT
+	GNUTLS_PRIVKEY_EXT,
+	// ARPA2 added by TomV for TLS-KDH: 
+	GNUTLS_PRIVKEY_KRB
+	// end
 } gnutls_privkey_type_t;
 
 typedef struct gnutls_retr2_st {
@@ -2006,6 +2081,7 @@ typedef struct gnutls_retr2_st {
 	union {
 		gnutls_x509_crt_t *x509;
 		gnutls_openpgp_crt_t pgp;
+		//TODO: kdh?
 	} cert;
 	unsigned int ncerts;	/* one for pgp keys */
 
@@ -2013,6 +2089,7 @@ typedef struct gnutls_retr2_st {
 		gnutls_x509_privkey_t x509;
 		gnutls_openpgp_privkey_t pgp;
 		gnutls_pkcs11_privkey_t pkcs11;
+		//TODO: kdh?
 	} key;
 
 	unsigned int deinit_all;	/* if non zero all keys will be deinited */

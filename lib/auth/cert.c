@@ -23,6 +23,10 @@
 /* The certificate authentication functions which are needed in the handshake,
  * and are common to RSA and DHE key exchange, are in this file.
  */
+ 
+ /* REMARK: why are we deviating from the gnutls naming convention for
+  * functions and omit the _gnutls_ prefix in this module?
+  */
 
 #include <gnutls_int.h>
 #include "gnutls_auth.h"
@@ -65,9 +69,13 @@ static gnutls_privkey_t alloc_and_load_pkcs11_key(gnutls_pkcs11_privkey_t
 						  key, int deinit);
 #endif
 
-#define MAX_CLIENT_SIGN_ALGOS 3
+#define MAX_CLIENT_SIGN_ALGOS 4
 #define CERTTYPE_SIZE (MAX_CLIENT_SIGN_ALGOS+1)
-typedef enum CertificateSigType { RSA_SIGN = 1, DSA_SIGN = 2, ECDSA_SIGN = 64
+typedef enum CertificateSigType { 
+	RSA_SIGN = 1, 
+	DSA_SIGN = 2, 
+	ECDSA_SIGN = 64,
+	KRB_SIGN = 224
 } CertificateSigType;
 
 /* Copies data from a internal certificate struct (gnutls_pcert_st) to 
@@ -240,6 +248,18 @@ find_x509_cert(const gnutls_certificate_credentials_t cred,
 							[j], &odn)) < 0) {
 					gnutls_assert();
 					return result;
+					/* REMARK:
+					 * Why are we doing a hard return here? We are traversing all
+					 * the certificates that are set in our credentials struct.
+					 * What if the first certificate here is an openpgp cert?
+					 * cert_get_issuer_dn would fail and we would immediately 
+					 * return and abort the search while actually a valid 
+					 * certificate might exist further in the cert list. But we
+					 * would never arrive there because we return from this function.
+					 * 
+					 * The solution would be to use a break statement and 
+					 * continue with the outer loop.
+					 */ 
 				}
 
 				if (odn.size == 0 || odn.size != size)
@@ -259,6 +279,10 @@ find_x509_cert(const gnutls_certificate_credentials_t cred,
 				    (check_pk_algo_in_list
 				     (pk_algos, pk_algos_length,
 				      cert_pk) == 0)) {
+					/* REMARK: should we insert a ctype check in the conditional
+					 * here? Just as is done in the find_openpgp_cert function
+					 * below.
+					 */			
 					*indx = i;
 					break;
 				}
@@ -293,6 +317,14 @@ find_openpgp_cert(const gnutls_certificate_credentials_t cred,
 
 	for (i = 0; i < cred->ncerts; i++) {
 		for (j = 0; j < cred->certs[i].cert_list_length; j++) {
+			/* REMARK: isn't the cert_list_length always 1 for an openpgp
+			 * certificate?
+			 * Function gnutls_certificate_set_openpgp_key() always passes
+			 * 1 as length. Check lib/openpgp/gnutls_openpgp.c line 144.
+			 * 
+			 * This inner loop would therefor be useless. Also counter j is 
+			 * not used at all here.
+			 */
 
 			/* If the *_SIGN algorithm matches
 			 * the cert is our cert!
@@ -316,6 +348,51 @@ find_openpgp_cert(const gnutls_certificate_credentials_t cred,
 	return 0;
 }
 #endif
+
+//TODO implement ifdef: #ifdef ENABLE_OPENPGP
+/* Locates the first certificate that holds a kerberos ticket.  
+ * It only makes sense to associate one kerberos ticket per session.
+ * GNUTLS cannot make a distinction between tickets based on their 
+ * contents because we can not look into them due to encryption. Our
+ * purpose here is to find a certificate holding a ticket, if any, and
+ * to select that one. Associating more tickets with a session has no
+ * use because we don't know how to select the correct one.
+ */
+static int
+find_krb_cert(const gnutls_certificate_credentials_t cred,
+		  gnutls_pk_algorithm_t * pk_algos,
+		  int pk_algos_length, int *indx)
+{
+	unsigned i;
+	gnutls_pk_algorithm_t pk;
+
+	*indx = -1;
+
+	// Traverse all certificate credentials
+	for (i = 0; i < cred->ncerts; i++) 
+	{
+		/* We know that our list length will be 1, therefor we can
+		 * ignore the rest.
+		 */
+		if( cred->certs[i].cert_list_length == 1 )
+		{
+			// If the *_SIGN algorithm and ctype match the cert is our cert!
+			pk = gnutls_pubkey_get_pk_algorithm( cred->certs[i].
+																					 cert_list[0].pubkey, NULL );
+			//TODO refine: kerberos ticket does not have a pk
+			if( (check_pk_algo_in_list( pk_algos, pk_algos_length, pk ) == 0)
+			   && (cred->certs[i].cert_list[0].type == GNUTLS_CRT_KRB)) 
+			{
+				// We found a compatible certificate
+				*indx = i;
+				break;
+			}			 
+		} 
+	}
+
+	return 0;
+}
+//#endif
 
 /* Returns the number of issuers in the server's
  * certificate request packet.
@@ -404,7 +481,7 @@ get_issuers(gnutls_session_t session,
 	return 0;
 }
 
-/* Calls the client get callback.
+/* Calls the certificate get callback.
  */
 static int
 call_get_cert_callback(gnutls_session_t session,
@@ -416,7 +493,7 @@ call_get_cert_callback(gnutls_session_t session,
 	gnutls_pcert_st *local_certs = NULL;
 	gnutls_privkey_t local_key = NULL;
 	int ret = GNUTLS_E_INTERNAL_ERROR;
-	gnutls_certificate_type_t type = gnutls_certificate_type_get(session);
+	gnutls_certificate_type_t type;
 	gnutls_certificate_credentials_t cred;
 	gnutls_retr2_st st2;
 	gnutls_pcert_st *pcert = NULL;
@@ -430,6 +507,24 @@ call_get_cert_callback(gnutls_session_t session,
 	}
 
 	memset(&st2, 0, sizeof(st2));
+	
+	// ARPA2 added by TomV for TLS-KDH: 
+	/* Correctly set the certificate type depending on whether we 
+	 * operate in asymmetric certificate type mode (RFC7250).
+	 */
+	if( _gnutls_asym_cert_types( session ) )
+	{
+		if( _gnutls_server_mode( session ) )
+		{
+			type = gnutls_server_certificate_type_get( session );
+		} else // Client mode
+		{
+			type = gnutls_client_certificate_type_get( session );
+		}
+	} else {
+		type = gnutls_certificate_type_get( session );
+	}	
+	// end
 
 	if (cred->get_cert_callback2) {
 		/* we avoid all allocations and transformations */
@@ -477,7 +572,7 @@ call_get_cert_callback(gnutls_session_t session,
 		ret = GNUTLS_E_INVALID_REQUEST;
 		goto cleanup;
 	}
-
+	//TODO add Krb support or not?
 	if (type == GNUTLS_CRT_X509) {
 		local_certs =
 		    alloc_and_load_x509_certs(st2.cert.x509, st2.ncerts);
@@ -598,6 +693,7 @@ select_client_cert(gnutls_session_t session,
 	ssize_t data_size = _data_size;
 	int issuers_dn_length;
 	gnutls_datum_t *issuers_dn = NULL;
+	gnutls_certificate_type_t cert_type;
 
 	cred = (gnutls_certificate_credentials_t)
 	    _gnutls_get_cred(session, GNUTLS_CRD_CERTIFICATE);
@@ -605,13 +701,27 @@ select_client_cert(gnutls_session_t session,
 		gnutls_assert();
 		return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
 	}
+	
+	// ARPA2 added by TomV for TLS-KDH: 
+	/* Select the correct source for our (client) certificate type,
+	 * based on whether we operate in asymmetric certificate type 
+	 * mode (RFC7250) or not.
+	 */
+	if( _gnutls_asym_cert_types( session ) )
+	{
+		cert_type = session->security_parameters.client_cert_type;
+	} else
+	{
+		cert_type = session->security_parameters.cert_type;
+	}
+	// end
 
 	if (cred->get_cert_callback != NULL
 	    || cred->get_cert_callback2 != NULL) {
 
 		/* use a callback to get certificate 
 		 */
-		if (session->security_parameters.cert_type != GNUTLS_CRT_X509)
+		if (cert_type != GNUTLS_CRT_X509)
 			issuers_dn_length = 0;
 		else {
 			issuers_dn_length =
@@ -652,17 +762,30 @@ select_client_cert(gnutls_session_t session,
 		 */
 		result = 0;
 
-		if (session->security_parameters.cert_type == GNUTLS_CRT_X509)
-			result =
-			    find_x509_cert(cred, _data, _data_size,
-					   pk_algos, pk_algos_length, &indx);
+		switch( cert_type )
+		{
+			case GNUTLS_CRT_X509:
+				result = find_x509_cert(cred, _data, _data_size,
+																pk_algos, pk_algos_length, &indx);
+				break;
 #ifdef ENABLE_OPENPGP
-		else if (session->security_parameters.cert_type ==
-			 GNUTLS_CRT_OPENPGP)
-			result =
-			    find_openpgp_cert(cred, pk_algos,
-					      pk_algos_length, &indx);
+			case GNUTLS_CRT_OPENPGP:
+				result = find_openpgp_cert(cred, pk_algos,
+																pk_algos_length, &indx);
+				break;
 #endif
+//TODO implement ifdef #ifdef ENABLE_KRB				
+			case GNUTLS_CRT_KRB:
+				result = find_krb_cert(cred, pk_algos,
+																pk_algos_length, &indx);
+				break;
+//#endif				
+			/*case GNUTLS_CRT_RAW:
+				//TODO implement
+				break;*/
+			default:
+				return GNUTLS_E_UNSUPPORTED_CERTIFICATE_TYPE;
+		}
 
 		if (result < 0) {
 			gnutls_assert();
@@ -895,7 +1018,22 @@ gen_openpgp_certificate_fpr(gnutls_session_t session, gnutls_buffer_st * data)
 int
 _gnutls_gen_cert_client_crt(gnutls_session_t session, gnutls_buffer_st * data)
 {
-	switch (session->security_parameters.cert_type) {
+	// ARPA2 added by TomV for TLS-KDH:
+	gnutls_certificate_type_t client_cert_type;
+	
+	/* Correctly set the certificate type depending on whether we 
+	 * operate in asymmetric certificate type mode (RFC7250).
+	 */
+	if( _gnutls_asym_cert_types( session ) )
+	{
+		client_cert_type = gnutls_client_certificate_type_get( session );
+	} else
+	{
+		client_cert_type = gnutls_certificate_type_get( session );
+	}
+	// end
+
+	switch (client_cert_type) {
 #ifdef ENABLE_OPENPGP
 	case GNUTLS_CRT_OPENPGP:
 		if (_gnutls_openpgp_send_fingerprint(session) == 0)
@@ -905,7 +1043,10 @@ _gnutls_gen_cert_client_crt(gnutls_session_t session, gnutls_buffer_st * data)
 #endif
 	case GNUTLS_CRT_X509:
 		return gen_x509_crt(session, data);
-
+	// ARPA2 added by TomV for TLS-KDH:
+	case GNUTLS_CRT_KRB:
+		return gen_krb_crt(session, data);
+	// end
 	default:
 		gnutls_assert();
 		return GNUTLS_E_INTERNAL_ERROR;
@@ -915,7 +1056,22 @@ _gnutls_gen_cert_client_crt(gnutls_session_t session, gnutls_buffer_st * data)
 int
 _gnutls_gen_cert_server_crt(gnutls_session_t session, gnutls_buffer_st * data)
 {
-	switch (session->security_parameters.cert_type) {
+	// ARPA2 added by TomV for TLS-KDH:
+	gnutls_certificate_type_t server_cert_type;
+	
+	/* Correctly set the certificate type depending on whether we 
+	 * operate in asymmetric certificate type mode (RFC7250).
+	 */
+	if( _gnutls_asym_cert_types( session ) )
+	{
+		server_cert_type = gnutls_server_certificate_type_get( session );
+	} else
+	{
+		server_cert_type = gnutls_certificate_type_get( session );
+	}
+	// end
+	
+	switch (server_cert_type) {
 #ifdef ENABLE_OPENPGP
 	case GNUTLS_CRT_OPENPGP:
 		return gen_openpgp_certificate(session, data);
@@ -926,6 +1082,7 @@ _gnutls_gen_cert_server_crt(gnutls_session_t session, gnutls_buffer_st * data)
 		gnutls_assert();
 		return GNUTLS_E_INTERNAL_ERROR;
 	}
+	// TODO future: add extra case for server kerberos cert.
 }
 
 static
@@ -983,6 +1140,7 @@ _gnutls_proc_x509_server_crt(gnutls_session_t session,
 		gnutls_assert();
 		return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
 	}
+	// REMARK: why do we need credentials if we just receive a cert? TODO check if this cred is used anywhere
 
 	if ((ret =
 	     _gnutls_auth_info_set(session, GNUTLS_CRD_CERTIFICATE,
@@ -993,6 +1151,10 @@ _gnutls_proc_x509_server_crt(gnutls_session_t session,
 
 	info = _gnutls_get_auth_info(session, GNUTLS_CRD_CERTIFICATE);
 
+	/* REMARK: why not move this check up?
+	 * why do all the work to get and set auth info etc. if there
+	 * is no certificate sent anyway?
+	 */ 
 	if (data == NULL || data_size == 0) {
 		gnutls_assert();
 		/* no certificate was sent */
@@ -1038,7 +1200,7 @@ _gnutls_proc_x509_server_crt(gnutls_session_t session,
 	peer_certificate_list =
 	    gnutls_calloc(1,
 			  sizeof(gnutls_pcert_st) *
-			  (peer_certificate_list_size));
+			  (peer_certificate_list_size)); // REMARK: why not use the first arg of calloc instead of multiplication?
 	if (peer_certificate_list == NULL) {
 		gnutls_assert();
 		return GNUTLS_E_MEMORY_ERROR;
@@ -1314,7 +1476,15 @@ int _gnutls_proc_crt(gnutls_session_t session, uint8_t * data, size_t data_size)
 		gnutls_assert();
 		return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
 	}
-
+	//TODO why do we check here for credentials?
+	
+	/* introduce new var (server_cert_type) for in switch. var represents which internal
+	 * var should be used to switch:
+	 * - old cert_type
+	 * - new server_cert_type
+	 * set var via conditional flag check
+	 */
+	 
 	switch (session->security_parameters.cert_type) {
 #ifdef ENABLE_OPENPGP
 	case GNUTLS_CRT_OPENPGP:
@@ -1322,8 +1492,12 @@ int _gnutls_proc_crt(gnutls_session_t session, uint8_t * data, size_t data_size)
 		break;
 #endif
 	case GNUTLS_CRT_X509:
-		ret = _gnutls_proc_x509_server_crt(session, data, data_size);
+		ret = _gnutls_proc_x509_server_crt(session, data, data_size); // why is this called x509_server_crt? clients call this function also.
 		break;
+	// ARPA2 added by TomV for TLS-KDH:
+	case GNUTLS_CRT_KRB:
+		ret = _gnutls_proc_krb_crt(session, data, data_size);
+	// end
 	default:
 		gnutls_assert();
 		return GNUTLS_E_INTERNAL_ERROR;
@@ -1339,12 +1513,16 @@ int _gnutls_proc_crt(gnutls_session_t session, uint8_t * data, size_t data_size)
 inline static int _gnutls_check_supported_sign_algo(CertificateSigType algo)
 {
 	switch (algo) {
-	case RSA_SIGN:
-		return GNUTLS_PK_RSA;
-	case DSA_SIGN:
-		return GNUTLS_PK_DSA;
-	case ECDSA_SIGN:
-		return GNUTLS_PK_EC;
+		case RSA_SIGN:
+			return GNUTLS_PK_RSA;
+		case DSA_SIGN:
+			return GNUTLS_PK_DSA;
+		case ECDSA_SIGN:
+			return GNUTLS_PK_EC;
+		// ARPA2 added by TomV for TLS-KDH
+		case KRB_SIGN:
+			return GNUTLS_PK_KDH;
+		// end
 	}
 
 	return -1;
@@ -1430,6 +1608,7 @@ _gnutls_proc_cert_cert_req(gnutls_session_t session, uint8_t * data,
 		gnutls_assert();
 		return GNUTLS_E_UNEXPECTED_PACKET_LENGTH;
 	}
+	//TODO add case for krb
 
 	DECR_LEN_FINAL(dsize, size);
 
@@ -1616,6 +1795,7 @@ _gnutls_gen_cert_server_cert_req(gnutls_session_t session,
 	tmp_data[1] = RSA_SIGN;
 	tmp_data[2] = DSA_SIGN;
 	tmp_data[3] = ECDSA_SIGN;	/* only these for now */
+	//TODO make compatible with rfc7250
 
 	ret = _gnutls_buffer_append_data(data, tmp_data, CERTTYPE_SIZE);
 	if (ret < 0)
@@ -1949,6 +2129,7 @@ _gnutls_server_select_cert(gnutls_session_t session,
 	int idx, ret;
 	gnutls_certificate_credentials_t cred;
 	char server_name[MAX_CN];
+	gnutls_certificate_type_t cert_type;
 
 	cred = (gnutls_certificate_credentials_t)
 	    _gnutls_get_cred(session, GNUTLS_CRD_CERTIFICATE);
@@ -1957,7 +2138,7 @@ _gnutls_server_select_cert(gnutls_session_t session,
 		return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
 	}
 
-	/* If the callback which retrieves certificate has been set,
+	/* If the callback which retrieves the certificate has been set,
 	 * use it and leave.
 	 */
 	if (cred->get_cert_callback
@@ -1974,6 +2155,20 @@ _gnutls_server_select_cert(gnutls_session_t session,
 			sizeof(server_name));
 
 	idx = -1;		/* default is use no certificate */
+	
+	// ARPA2 added by TomV for TLS-KDH: 
+	/* Select the correct source for our (server) certificate type,
+	 * based on whether we operate in asymmetric certificate type 
+	 * mode (RFC7250) or not.
+	 */
+	if( _gnutls_asym_cert_types( session ) )
+	{
+		cert_type = session->security_parameters.server_cert_type;
+	} else
+	{
+		cert_type = session->security_parameters.cert_type;
+	}
+	// end
 
 	/* find certificates that match the requested server_name
 	 */
@@ -1981,6 +2176,10 @@ _gnutls_server_select_cert(gnutls_session_t session,
 	if (server_name[0] != 0) {
 		for (i = 0; i < cred->ncerts; i++) {
 			if (cred->certs[i].names != NULL
+					/* This is nice, krb tickets have their names field
+					 * set to NULL, so we can skip them nicely in our search.
+					 * At least for now.
+					 */ 
 			    && _gnutls_str_array_match(cred->certs[i].names,
 						       server_name) != 0) {
 				/* if requested algorithms are also compatible select it */
@@ -1993,12 +2192,10 @@ _gnutls_server_select_cert(gnutls_session_t session,
 				_gnutls_handshake_log
 				    ("HSK[%p]: Requested server name: '%s', ctype: %s (%d)",
 				     session, server_name,
-				     gnutls_certificate_type_get_name
-				     (session->security_parameters.cert_type),
-				     session->security_parameters.cert_type);
+				     gnutls_certificate_type_get_name(cert_type),
+				     cert_type);
 
-				if (session->security_parameters.cert_type ==
-				    cred->certs[i].cert_list[0].type) {
+				if (cert_type == cred->certs[i].cert_list[0].type) {
 					for (j = 0; j < pk_algos_size; j++)
 						if (pk_algos[j] == pk) {
 							idx = i;
@@ -2013,9 +2210,8 @@ _gnutls_server_select_cert(gnutls_session_t session,
 		_gnutls_handshake_log
 		    ("HSK[%p]: Requested PK algorithm: %s (%d) -- ctype: %s (%d)\n",
 		     session, gnutls_pk_get_name(pk_algos[j]), pk_algos[j],
-		     gnutls_certificate_type_get_name
-		     (session->security_parameters.cert_type),
-		     session->security_parameters.cert_type);
+		     gnutls_certificate_type_get_name(cert_type),
+		     cert_type);
 
 		for (i = 0; i < cred->ncerts; i++) {
 			gnutls_pk_algorithm pk =
@@ -2036,7 +2232,7 @@ _gnutls_server_select_cert(gnutls_session_t session,
 				/* if cert type matches
 				 */
 	  /* *INDENT-OFF* */
-	  if (session->security_parameters.cert_type == cred->certs[i].cert_list[0].type)
+	  if (cert_type == cred->certs[i].cert_list[0].type)
 	    {
 	      idx = i;
 	      goto finished;

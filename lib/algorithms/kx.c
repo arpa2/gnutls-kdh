@@ -40,7 +40,12 @@ extern mod_auth_st dhe_psk_auth_struct;
 extern mod_auth_st rsa_psk_auth_struct;
 extern mod_auth_st srp_rsa_auth_struct;
 extern mod_auth_st srp_dss_auth_struct;
-
+// ARPA2 added by TomV & RickvR for TLS-KDH:
+extern mod_auth_st ecdhe_kdh_auth_struct;
+extern mod_auth_st ecdhe_kdh_rsa_auth_struct; //TODO nodig?
+extern mod_auth_st ecdhe_kdh_ecdsa_auth_struct; //TODO nodig?
+extern mod_auth_st ecdhe_kdh_dsa_auth_struct; //TODO nodig?
+// end
 
 /* Cred type mappings to KX algorithms 
  * FIXME: The mappings are not 1-1. Some KX such as SRP_RSA require
@@ -72,6 +77,12 @@ static const gnutls_cred_map cred_mappings[] = {
 	{GNUTLS_KX_SRP, GNUTLS_CRD_SRP, GNUTLS_CRD_SRP},
 	{GNUTLS_KX_SRP_RSA, GNUTLS_CRD_SRP, GNUTLS_CRD_CERTIFICATE},
 	{GNUTLS_KX_SRP_DSS, GNUTLS_CRD_SRP, GNUTLS_CRD_CERTIFICATE},
+	// ARPA2 added by TomV & RickvR for TLS-KDH:
+	{GNUTLS_KX_ECDHE_KDH, GNUTLS_CRD_CERTIFICATE, GNUTLS_CRD_ANON},
+	{GNUTLS_KX_ECDHE_KDH_RSA, GNUTLS_CRD_CERTIFICATE, GNUTLS_CRD_CERTIFICATE}, //TODO nodig?
+	{GNUTLS_KX_ECDHE_KDH_ECDSA, GNUTLS_CRD_CERTIFICATE, GNUTLS_CRD_CERTIFICATE}, //TODO nodig?
+	{GNUTLS_KX_ECDHE_KDH_DSA, GNUTLS_CRD_CERTIFICATE, GNUTLS_CRD_CERTIFICATE}, //TODO nodig?
+	// end
 	{0, 0, 0}
 };
 
@@ -107,6 +118,12 @@ static const gnutls_kx_algo_entry _gnutls_kx_algorithms[] = {
 	{"ECDHE-RSA", GNUTLS_KX_ECDHE_RSA, &ecdhe_rsa_auth_struct, 0, GNUTLS_PK_RSA},
 	{"ECDHE-ECDSA", GNUTLS_KX_ECDHE_ECDSA, &ecdhe_ecdsa_auth_struct,
 	 0, GNUTLS_PK_EC},
+// ARPA2 added by TomV & RickvR for TLS-KDH:
+	{"ECDHE-KDH", GNUTLS_KX_ECDHE_KDH, &ecdhe_kdh_auth_struct, 0, GNUTLS_PK_KDH},
+	//{"ECDHE-KDH-RSA", GNUTLS_KX_ECDHE_KDH_RSA, &ecdhe_kdh_rsa_auth_struct, 0, GNUTLS_PK_RSA}, //TODO nodig?
+	//{"ECDHE-KDH-ECDSA", GNUTLS_KX_ECDHE_KDH_ECDSA, &ecdhe_kdh_ecdsa_auth_struct, 0, GNUTLS_PK_EC}, //TODO nodig?
+	//{"ECDHE-KDH-DSA", GNUTLS_KX_ECDHE_KDH_DSA, &ecdhe_kdh_dsa_auth_struct, 0, GNUTLS_PK_DSA}, //TODO nodig? ecdhe-dsa bestaat niet
+	// end
 #endif
 #ifdef ENABLE_SRP
 	{"SRP-DSS", GNUTLS_KX_SRP_DSS, &srp_dss_auth_struct, 0, GNUTLS_PK_DSA},

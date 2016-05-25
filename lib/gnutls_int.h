@@ -260,14 +260,31 @@ typedef enum extensions_t {
 	GNUTLS_EXTENSION_SRTP = 14,
 	GNUTLS_EXTENSION_HEARTBEAT = 15,
 	GNUTLS_EXTENSION_ALPN = 16,
+	/* ARPA2 added by TomV in support for TLS-KDH */
+	GNUTLS_EXTENSION_CLIENT_CERT_TYPE = 19,
+	GNUTLS_EXTENSION_SERVER_CERT_TYPE = 20,
+	/* end */
 	GNUTLS_EXTENSION_DUMBFW = 21,
 	GNUTLS_EXTENSION_ETM = 22,
 	GNUTLS_EXTENSION_EXT_MASTER_SECRET = 23,
+	/* ARPA2 added by TomV for TLS-KDH:
+	 * 
+	 * KDH Ticket Request Flags extension
+	 * TODO: IANA assign definite number
+	 */
+	GNUTLS_EXTENSION_KDH_TRF = 25,
+	/* end */
 	GNUTLS_EXTENSION_SESSION_TICKET = 35,
 	GNUTLS_EXTENSION_SAFE_RENEGOTIATION = 65281	/* aka: 0xff01 */
 } extensions_t;
 
 typedef enum { CIPHER_STREAM, CIPHER_BLOCK, CIPHER_AEAD } cipher_type_t;
+
+typedef enum {
+	CTYPE_CLIENT,
+	CTYPE_SERVER,
+	CTYPE_IGNORE
+} gnutls_ctype_mode_t;
 
 #define RESUME_TRUE 1
 #define RESUME_FALSE 0
@@ -397,7 +414,7 @@ struct gnutls_key_st {
 	 */
 	bigint_t rsa[2];
 
-	/* this is used to hold the peers authentication data 
+	/* this is used to hold the peers authentication data
 	 */
 	/* auth_info_t structures SHOULD NOT contain malloced 
 	 * elements. Check gnutls_session_pack.c, and gnutls_auth.c.
@@ -464,6 +481,15 @@ typedef struct gnutls_cipher_suite_entry_st {
 	gnutls_protocol_t min_dtls_version;	/* DTLS min version */
 	gnutls_mac_algorithm_t prf;
 	nonce_type_t nonce_type;
+	
+	/* ARPA2 added by TomV for TLS-KDH: 
+	 * 
+	 * Add draft support for TLS 1.2 variable verify_data_length values.
+	 * See https://tools.ietf.org/html/rfc5246#section-7.4.9 
+	 */
+	const uint16_t verify_data_length;
+	/* end */ 
+	
 } gnutls_cipher_suite_entry_st;
 
 /* This structure is used both for MACs and digests
@@ -515,7 +541,26 @@ typedef struct {
 #define MAX_SIGNATURE_ALGORITHMS 16
 #define MAX_SIGN_ALGO_SIZE (2 + MAX_SIGNATURE_ALGORITHMS * 2)
 
-#define MAX_VERIFY_DATA_SIZE 36	/* in SSL 3.0, 12 in TLS 1.0 */
+/* ARPA2 updatet by TomV for TLS-KDH:
+ * 
+ * Set MAX_VERIFY_DATA_SIZE to 64 (it was 36).
+ * TLS 1.2 supports variable verify_data lengths,
+ * see https://tools.ietf.org/html/rfc5246#section-7.4.9.
+ * 
+ * Choose as max value here at least the highest value that is specified
+ * in the ciphersuite definitions. See cihpersuites.c
+ * 
+ * For completeness:
+ * - SSL 3.0 uses 36
+ * - TLS 1.0 & 1.1 use 12
+ * - TLS 1.2 defaults to 12
+ */
+#define MAX_VERIFY_DATA_SIZE 64
+#define MIN_VERIFY_DATA_SIZE 12
+#define VERIFY_DATA_LEN_SSL3 36
+#define VERIFY_DATA_LEN_TLS1 12
+#define VERIFY_DATA_LEN_UNKNOWN 0
+#define DEFAULT_VERIFY_DATA_LEN_TLS1_2 VERIFY_DATA_LEN_TLS1
 
 /* auth_info_t structures now MAY contain malloced 
  * elements.
@@ -563,8 +608,14 @@ typedef struct {
 	 */
 	uint16_t max_record_send_size;
 	uint16_t max_record_recv_size;
-	/* holds the negotiated certificate type */
-	gnutls_certificate_type_t cert_type;
+	/* holds the negotiated certificate types */
+	gnutls_certificate_type_t cert_type; /* Here for backwards compatibility. 
+		As of version TODO, applications should use the new API that enables use
+		of asymmetric certificate types for client and server */
+	// ARPA2 added by TomV for TLS-KDH:
+	gnutls_certificate_type_t client_cert_type;
+	gnutls_certificate_type_t server_cert_type;
+	// end
 	gnutls_ecc_curve_t ecc_curve;	/* holds the first supported ECC curve requested by client */
 
 	/* Holds the signature algorithm used in this session - If any */
@@ -653,7 +704,13 @@ struct gnutls_priority_st {
 	priority_st kx;
 	priority_st compression;
 	priority_st protocol;
-	priority_st cert_type;
+	priority_st cert_type; /* Here for backwards compatibility. 
+		As of version TODO, applications should use the new API that enables use
+		of asymmetric certificate types for client and server */
+	// ARPA2 added by TomV for TLS-KDH:
+	priority_st client_cert_type;
+	priority_st server_cert_type;
+	// end
 	priority_st sign_algo;
 	priority_st supported_ecc;
 
@@ -671,6 +728,9 @@ struct gnutls_priority_st {
 	bool have_cbc;
 	/* Whether stateless compression will be used */
 	bool stateless_compression;
+	// ARPA2 added by TomV for TLS-KDH:
+	bool asym_cert_types; // toggle use of rfc6091 vs rfc7250 extensions
+	// end
 	unsigned int additional_verify_flags;
 
 	/* The session's expected security level.
@@ -833,7 +893,7 @@ typedef struct {
 	 * supports it. In server side it contains GNUTLS_CERT_REQUIRE
 	 * or similar.
 	 */
-	unsigned send_cert_req;
+	unsigned send_cert_req; //REMARK: why not change this to gnutls_certificate_request_t type?
 
 	size_t max_handshake_data_buffer_size;
 
@@ -1028,6 +1088,10 @@ struct gnutls_session_int {
 /* functions 
  */
 void _gnutls_free_auth_info(gnutls_session_t session);
+//
+inline static int _gnutls_server_mode( gnutls_session_t session );
+inline static int _gnutls_client_mode( gnutls_session_t session );
+//
 
 /* These two macros return the advertised TLS version of
  * the peer.
@@ -1087,6 +1151,26 @@ inline static size_t max_user_send_size(gnutls_session_t session,
 	}
 
 	return max;
+}
+
+/* The mode check occurs a lot throughout GNUTLS and can be replaced by 
+ * the following shorter function call. Also easier to update one function
+ * in the future when the internal structure changes than all the conditionals
+ * itself. */
+inline static int _gnutls_server_mode( gnutls_session_t session ) 
+{
+	return session->security_parameters.entity == GNUTLS_SERVER;
+}
+
+inline static int _gnutls_client_mode( gnutls_session_t session ) 
+{
+	return session->security_parameters.entity == GNUTLS_CLIENT;
+}
+/* end */
+
+inline static int _gnutls_asym_cert_types( gnutls_session_t session )
+{
+	return session->internals.priorities.asym_cert_types;
 }
 
 #endif				/* GNUTLS_INT_H */

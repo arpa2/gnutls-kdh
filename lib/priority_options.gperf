@@ -34,3 +34,4 @@ PROFILE_ULTRA, enable_profile_ultra
 PROFILE_SUITEB128, enable_profile_suiteb128
 PROFILE_SUITEB192, enable_profile_suiteb192
 NEW_PADDING, dummy_func
+ASYM_CERT_TYPES, enable_asym_cert_types

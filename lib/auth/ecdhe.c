@@ -22,7 +22,7 @@
 
 /* This file contains common stuff in Ephemeral Diffie-Hellman (DHE)
  * and Anonymous DH key exchange(DHA). These are used in the handshake
- * procedure of the certificate and anoymous authentication.
+ * procedure of the certificate and anonymous authentication.
  */
 
 #include <gnutls_int.h>
@@ -84,6 +84,73 @@ const mod_auth_st ecdhe_rsa_auth_struct = {
 	_gnutls_proc_cert_client_crt_vrfy,
 	_gnutls_proc_cert_cert_req
 };
+
+// ARPA2 added by TomV & RickvR for TLS-KDH:
+const mod_auth_st ecdhe_kdh_auth_struct = {//TODO: finish
+	"ECDHE_KDH",
+	NULL, // don't need it
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	
+	_gnutls_proc_crt,
+	_gnutls_proc_crt,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+const mod_auth_st ecdhe_kdh_rsa_auth_struct = {//TODO: finish
+	"ECDHE_KDH_RSA",
+	NULL, // don't need it
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	
+	_gnutls_proc_crt,
+	_gnutls_proc_crt,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+const mod_auth_st ecdhe_kdh_ecdsa_auth_struct = {//TODO: finish
+	"ECDHE_KDH_ECDSA",
+	NULL, // don't need it
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	
+	_gnutls_proc_crt,
+	_gnutls_proc_crt,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+const mod_auth_st ecdhe_kdh_dsa_auth_struct = {//TODO: finish
+	"ECDHE_KDH_DSA",
+	NULL, // don't need it
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	
+	_gnutls_proc_crt,
+	_gnutls_proc_crt,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+// end 
 
 static int calc_ecdh_key(gnutls_session_t session,
 			 gnutls_datum_t * psk_key,

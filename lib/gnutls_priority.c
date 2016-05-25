@@ -179,6 +179,11 @@ static const int _kx_priority_performance[] = {
 #ifdef ENABLE_ECDHE
 	GNUTLS_KX_ECDHE_ECDSA,
 	GNUTLS_KX_ECDHE_RSA,
+	// ARPA2 added by TomV & RickvR for TLS-KDH: 
+	GNUTLS_KX_ECDHE_KDH,
+	GNUTLS_KX_ECDHE_KDH_RSA,
+	GNUTLS_KX_ECDHE_KDH_ECDSA,
+	// end
 #endif
 #ifdef ENABLE_DHE
 	GNUTLS_KX_DHE_RSA,
@@ -191,6 +196,11 @@ static const int _kx_priority_pfs[] = {
 #ifdef ENABLE_ECDHE
 	GNUTLS_KX_ECDHE_ECDSA,
 	GNUTLS_KX_ECDHE_RSA,
+	// ARPA2 added by TomV for TLS-KDH: 
+	GNUTLS_KX_ECDHE_KDH,
+	GNUTLS_KX_ECDHE_KDH_ECDSA,
+	GNUTLS_KX_ECDHE_KDH_RSA,
+	// end
 #endif
 #ifdef ENABLE_DHE
 	GNUTLS_KX_DHE_RSA,
@@ -212,6 +222,11 @@ static const int _kx_priority_secure[] = {
 #ifdef ENABLE_ECDHE
 	GNUTLS_KX_ECDHE_ECDSA,
 	GNUTLS_KX_ECDHE_RSA,
+	// ARPA2 added by TomV & RickvR for TLS-KDH: 
+	GNUTLS_KX_ECDHE_KDH,
+	GNUTLS_KX_ECDHE_KDH_ECDSA,
+	GNUTLS_KX_ECDHE_KDH_RSA,
+	// end
 #endif
 	GNUTLS_KX_RSA,
 	/* KX-RSA is now ahead of DHE-RSA and DHE-DSS due to the compatibility
@@ -335,12 +350,15 @@ static const int comp_priority[] = {
 static const int _sign_priority_default[] = {
 	GNUTLS_SIGN_RSA_SHA256,
 	GNUTLS_SIGN_ECDSA_SHA256,
+	GNUTLS_SIGN_KDH_SHA256,
 
 	GNUTLS_SIGN_RSA_SHA384,
 	GNUTLS_SIGN_ECDSA_SHA384,
+	GNUTLS_SIGN_KDH_SHA384,
 
 	GNUTLS_SIGN_RSA_SHA512,
 	GNUTLS_SIGN_ECDSA_SHA512,
+	GNUTLS_SIGN_KDH_SHA512,
 
 	GNUTLS_SIGN_RSA_SHA224,
 	GNUTLS_SIGN_ECDSA_SHA224,
@@ -367,10 +385,13 @@ static const int* sign_priority_suiteb192 = _sign_priority_suiteb192;
 static const int _sign_priority_secure128[] = {
 	GNUTLS_SIGN_RSA_SHA256,
 	GNUTLS_SIGN_ECDSA_SHA256,
+	GNUTLS_SIGN_KDH_SHA256,
 	GNUTLS_SIGN_RSA_SHA384,
 	GNUTLS_SIGN_ECDSA_SHA384,
+	GNUTLS_SIGN_KDH_SHA384,
 	GNUTLS_SIGN_RSA_SHA512,
 	GNUTLS_SIGN_ECDSA_SHA512,
+	GNUTLS_SIGN_KDH_SHA512,
 	0
 };
 static const int* sign_priority_secure128 = _sign_priority_secure128;
@@ -378,8 +399,10 @@ static const int* sign_priority_secure128 = _sign_priority_secure128;
 static const int _sign_priority_secure192[] = {
 	GNUTLS_SIGN_RSA_SHA384,
 	GNUTLS_SIGN_ECDSA_SHA384,
+	GNUTLS_SIGN_KDH_SHA384,
 	GNUTLS_SIGN_RSA_SHA512,
 	GNUTLS_SIGN_ECDSA_SHA512,
+	GNUTLS_SIGN_KDH_SHA512,
 	0
 };
 static const int* sign_priority_secure192 = _sign_priority_secure192;
@@ -444,6 +467,8 @@ static const int cert_type_priority_default[] = {
 static const int cert_type_priority_all[] = {
 	GNUTLS_CRT_X509,
 	GNUTLS_CRT_OPENPGP,
+	GNUTLS_CRT_KRB,
+	//TODO insert RAW type when support fully implemented
 	0
 };
 
@@ -837,6 +862,14 @@ static void enable_server_precedence(gnutls_priority_t c)
 static void dummy_func(gnutls_priority_t c)
 {
 }
+// ARPA2 added by TomV for TLS-KDH:
+static void enable_asym_cert_types(gnutls_priority_t c)
+{
+	c->asym_cert_types = 1;
+}
+// end
+
+//TODO make sure that asym ctype flags can be set via prior strings
 
 #include <priority_options.h>
 
@@ -1104,6 +1137,12 @@ gnutls_priority_init(gnutls_priority_t * priority_cache,
 			      comp_priority);
 		_set_priority(&(*priority_cache)->cert_type,
 			      cert_type_priority_default);
+		// ARPA2 added by TomV for TLS-KDH:
+		_set_priority(&(*priority_cache)->client_cert_type,
+			      cert_type_priority_default);
+		_set_priority(&(*priority_cache)->server_cert_type,
+			      cert_type_priority_default);
+		// end
 		_set_priority(&(*priority_cache)->sign_algo,
 			      sign_priority_default);
 		_set_priority(&(*priority_cache)->supported_ecc,
@@ -1221,14 +1260,38 @@ gnutls_priority_init(gnutls_priority_t * priority_cache,
 				}
 			} /* now check if the element is something like -ALGO */
 			else if (strncasecmp
-				 (&broken_list[i][1], "CTYPE-", 6) == 0) {
+				 (&broken_list[i][1], "CTYPE-", 6) == 0) { // Certificate types
 				if (strncasecmp
 				    (&broken_list[i][1], "CTYPE-ALL",
 				     9) == 0) {
 					bulk_fn(&(*priority_cache)->
 						cert_type,
 						cert_type_priority_all);
-				} else {
+				// ARPA2 added by TomV for TLS-KDH:
+				} else if (strncasecmp
+				    (&broken_list[i][1], "CTYPE-CLI-",
+				     10) == 0) { // Client certificate type
+					if ((algo =
+					     gnutls_certificate_type_get_id
+					     (&broken_list[i][11])) !=
+					    GNUTLS_CRT_UNKNOWN)
+						fn(&(*priority_cache)->
+						   client_cert_type, algo);
+					else
+						goto error;
+				} else if (strncasecmp
+				    (&broken_list[i][1], "CTYPE-SRV-",
+				     10) == 0) { // Server certificate type
+					if ((algo =
+					     gnutls_certificate_type_get_id
+					     (&broken_list[i][11])) !=
+					    GNUTLS_CRT_UNKNOWN)
+						fn(&(*priority_cache)->
+						   server_cert_type, algo);
+					else
+						goto error;
+				// end	
+				} else { // Symmetric certificate type
 					if ((algo =
 					     gnutls_certificate_type_get_id
 					     (&broken_list[i][7])) !=

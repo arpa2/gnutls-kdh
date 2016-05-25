@@ -820,7 +820,7 @@ gnutls_ocsp_status_request_is_checked(gnutls_session_t session,
  *
  * Since: 3.1.10
  **/
-char *gnutls_session_get_desc(gnutls_session_t session)
+char *gnutls_session_get_desc(gnutls_session_t session) //TODO extend
 {
 	gnutls_kx_algorithm_t kx;
 	const char *kx_str;

@@ -27,6 +27,13 @@
 
 void _gnutls_session_cert_type_set(gnutls_session_t session,
 				   gnutls_certificate_type_t);
+				   
+// ARPA2 added by TomV for TLS-KDH:
+void _gnutls_session_client_cert_type_set(gnutls_session_t session,
+					 gnutls_certificate_type_t);
+void _gnutls_session_server_cert_type_set(gnutls_session_t session,
+					 gnutls_certificate_type_t);
+// end
 
 inline static gnutls_ecc_curve_t
 _gnutls_session_ecc_curve_get(gnutls_session_t session)
@@ -59,8 +66,12 @@ _gnutls_hello_set_default_version(gnutls_session_t session,
 
 #endif
 
-int _gnutls_session_cert_type_supported(gnutls_session_t,
-					gnutls_certificate_type_t);
+int _gnutls_check_cert_credentials_set( gnutls_session_t session,
+						gnutls_certificate_type_t cert_type );
+int _gnutls_session_cert_type_supported( gnutls_session_t session,
+				    gnutls_certificate_type_t cert_type,
+				    bool CheckCredentials,
+				    gnutls_ctype_mode_t ctype_mode );
 int _gnutls_dh_set_secret_bits(gnutls_session_t session, unsigned bits);
 
 int _gnutls_dh_set_peer_public(gnutls_session_t session, bigint_t public);

@@ -43,6 +43,12 @@ const char *gnutls_certificate_type_get_name(gnutls_certificate_type_t
 		ret = "X.509";
 	if (type == GNUTLS_CRT_OPENPGP)
 		ret = "OPENPGP";
+	// ARPA2 added by TomV for TLS-KDH:	
+	if (type == GNUTLS_CRT_RAW)
+		ret = "RAW";
+	if (type == GNUTLS_CRT_KRB)
+		ret = "KERBEROS";
+	// end
 
 	return ret;
 }
@@ -65,6 +71,13 @@ gnutls_certificate_type_t gnutls_certificate_type_get_id(const char *name)
 		return GNUTLS_CRT_X509;
 	if (strcasecmp(name, "OPENPGP") == 0)
 		return GNUTLS_CRT_OPENPGP;
+	// ARPA2 added by RickvR for TLS-KDH:	
+	if (strcasecmp(name, "RAW") == 0)
+		return GNUTLS_CRT_RAW;
+	if (strcasecmp(name, "KERBEROS") == 0
+	    || strcasecmp(name, "KRB") == 0)
+		return GNUTLS_CRT_KRB;
+	// end
 
 	return ret;
 }
@@ -72,6 +85,8 @@ gnutls_certificate_type_t gnutls_certificate_type_get_id(const char *name)
 static const gnutls_certificate_type_t supported_certificate_types[] = {
 	GNUTLS_CRT_X509,
 	GNUTLS_CRT_OPENPGP,
+	//GNUTLS_CRT_RAW, //TODO enable when full support implemented
+	GNUTLS_CRT_KRB,
 	0
 };
 

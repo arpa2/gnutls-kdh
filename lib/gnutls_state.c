@@ -65,6 +65,26 @@ _gnutls_session_cert_type_set(gnutls_session_t session,
 	session->security_parameters.cert_type = ct;
 }
 
+// ARPA2 added by TomV for TLS-KDH:
+void _gnutls_session_client_cert_type_set( gnutls_session_t session,
+			      gnutls_certificate_type_t ct )
+{
+	_gnutls_handshake_log
+	    ("HSK[%p]: Selected client certificate type %s (%d)\n", session,
+	     gnutls_certificate_type_get_name( ct ), ct);
+	session->security_parameters.client_cert_type = ct;
+}
+
+void _gnutls_session_server_cert_type_set( gnutls_session_t session,
+			      gnutls_certificate_type_t ct )
+{
+	_gnutls_handshake_log
+	    ("HSK[%p]: Selected server certificate type %s (%d)\n", session,
+	     gnutls_certificate_type_get_name( ct ), ct);
+	session->security_parameters.server_cert_type = ct;
+}
+// end
+
 void
 _gnutls_session_ecc_curve_set(gnutls_session_t session,
 			      gnutls_ecc_curve_t c)
@@ -111,6 +131,40 @@ gnutls_certificate_type_get(gnutls_session_t session)
 {
 	return session->security_parameters.cert_type;
 }
+
+// ARPA2 added by TomV for TLS-KDH:
+/**
+ * gnutls_client_certificate_type_get:
+ * @session: is a #gnutls_session_t type.
+ *
+ * The client certificate type is by default X.509, 
+ * unless it is negotiated as a TLS extension.
+ *
+ * Returns: the currently used #gnutls_certificate_type_t 
+ * client certificate type.
+ **/
+gnutls_certificate_type_t
+gnutls_client_certificate_type_get(gnutls_session_t session)
+{
+	return session->security_parameters.client_cert_type;
+}
+
+/**
+ * gnutls_server_certificate_type_get:
+ * @session: is a #gnutls_session_t type.
+ *
+ * The server certificate type is by default X.509, 
+ * unless it is negotiated as a TLS extension.
+ *
+ * Returns: the currently used #gnutls_certificate_type_t 
+ * server certificate type.
+ **/
+gnutls_certificate_type_t
+gnutls_server_certificate_type_get(gnutls_session_t session)
+{
+	return session->security_parameters.server_cert_type;
+}
+// end
 
 /**
  * gnutls_kx_get:
@@ -171,50 +225,115 @@ gnutls_compression_get(gnutls_session_t session)
 	return record_params->compression_algorithm;
 }
 
-/* Check if the given certificate type is supported.
- * This means that it is enabled by the priority functions,
- * and a matching certificate exists.
+/*
+ * 
  */
-int
-_gnutls_session_cert_type_supported(gnutls_session_t session,
-				    gnutls_certificate_type_t cert_type)
+int _gnutls_check_cert_credentials_set( gnutls_session_t session,
+						gnutls_certificate_type_t cert_type )
 {
 	unsigned i;
 	unsigned cert_found = 0;
 	gnutls_certificate_credentials_t cred;
+	
+	/* First, check for certificate credentials. If we have no certificate
+	 * credentials set then we don't support certificates at all.
+	 */
+	cred = (gnutls_certificate_credentials_t)
+			_gnutls_get_cred(session, GNUTLS_CRD_CERTIFICATE);
 
-	if (session->security_parameters.entity == GNUTLS_SERVER) {
-		cred = (gnutls_certificate_credentials_t)
-		    _gnutls_get_cred(session, GNUTLS_CRD_CERTIFICATE);
+	if (cred == NULL)
+		return GNUTLS_E_UNSUPPORTED_CERTIFICATE_TYPE;
 
-		if (cred == NULL)
-			return GNUTLS_E_UNSUPPORTED_CERTIFICATE_TYPE;
-
-		if (cred->get_cert_callback == NULL && cred->get_cert_callback2 == NULL) {
-			for (i = 0; i < cred->ncerts; i++) {
-				if (cred->certs[i].cert_list[0].type ==
-				    cert_type) {
-					cert_found = 1;
-					break;
-				}
+	/* There are credentials initialized. Now check whether we can find
+	 * pre-set certificates of the required type, but only if we don't 
+	 * use the callback functions.
+	 */
+	if (cred->get_cert_callback == NULL && cred->get_cert_callback2 == NULL) {
+		for (i = 0; i < cred->ncerts; i++) {
+			if (cred->certs[i].cert_list[0].type ==
+					cert_type) {
+				cert_found = 1;
+				break;
 			}
-
-			if (cert_found == 0)
-				/* no certificate is of that type.
-				 */
-				return
-				    GNUTLS_E_UNSUPPORTED_CERTIFICATE_TYPE;
 		}
+
+		if (cert_found == 0)
+			/* no certificate is of that type.
+			 */
+			return
+					GNUTLS_E_UNSUPPORTED_CERTIFICATE_TYPE;
+	}	
+	
+	return 0; // OK
+} 
+
+/* Check if the given certificate type is supported.
+ * This means that it is enabled by the priority functions,
+ * and in some cases a matching certificate exists. A check for 
+ * the latter can be toggled via the parameter %CheckCredentials.
+ * 
+ * If you are calling this function in symmetric certificate type
+ * mode then the last parameter (%ctype_mode) will be ignored. For
+ * code readability an extra "dummy" value CTYPE_IGNORE is defined
+ * in the gnutls_ctype_mode_t type to distinguish the fact that this
+ * function argument will not be used in the call. Inserting one of 
+ * the other values is also valid but might suggest wrong behavior
+ * for someone reading your code.
+ */
+int
+_gnutls_session_cert_type_supported( gnutls_session_t session,
+				    gnutls_certificate_type_t cert_type,
+				    bool CheckCredentials,
+				    gnutls_ctype_mode_t ctype_mode )
+{
+	int ret;
+	unsigned i;
+	priority_st* ctype_priorities;
+
+	// Perform a credentials check if requested
+	if( CheckCredentials )
+	{
+		ret = _gnutls_check_cert_credentials_set( session, cert_type );
+		
+		if( ret < 0 ) return ret;
 	}
 
-	if (session->internals.priorities.cert_type.algorithms == 0
+	/* So far so good. We have the required certificates. Now check 
+	 * whether we are allowed to use them according to our priorities.
+	 */
+	// First determine whether we are using asymmetric cert types
+	if( _gnutls_asym_cert_types( session ) ) 
+	{
+		// Which certificate type should we query?
+		switch( ctype_mode )
+		{
+			case CTYPE_CLIENT:
+				ctype_priorities = &(session->internals.priorities.client_cert_type);
+				break;
+			case CTYPE_SERVER:
+				ctype_priorities = &(session->internals.priorities.server_cert_type);
+				break;
+			default:
+				gnutls_assert();
+				return GNUTLS_E_INTERNAL_ERROR;
+		}
+	} else 
+	{
+		ctype_priorities = &(session->internals.priorities.cert_type);
+	}
+	
+	// No explicit priorities set, and default ctype is asked
+	if (ctype_priorities->algorithms == 0 
 	    && cert_type == DEFAULT_CERT_TYPE)
-		return 0;
+		return 0; // ok
 
-	for (i = 0; i < session->internals.priorities.cert_type.algorithms;
-	     i++) {
-		if (session->internals.priorities.cert_type.priority[i] ==
-		    cert_type) {
+	/* Explicit priorities are set. Now lets find out whether our
+	 * cert type is in our priority list, i.e. set of allowed cert types.
+	 */
+	for (i = 0; i < ctype_priorities->algorithms; i++) 
+	{
+		if (ctype_priorities->priority[i] == cert_type) 
+		{
 			return 0;	/* ok */
 		}
 	}
@@ -299,7 +418,7 @@ void _gnutls_handshake_internal_state_clear(gnutls_session_t session)
  * TLS extensions such as session tickets and OCSP certificate status
  * request in client side by default. To prevent that use the %GNUTLS_NO_EXTENSIONS
  * flag.
- *
+ * 
  * Returns: %GNUTLS_E_SUCCESS on success, or an error code.
  **/
 int gnutls_init(gnutls_session_t * session, unsigned int flags)
@@ -329,6 +448,10 @@ int gnutls_init(gnutls_session_t * session, unsigned int flags)
 
 	/* the default certificate type for TLS */
 	(*session)->security_parameters.cert_type = DEFAULT_CERT_TYPE;
+	// ARPA2 added by TomV for TLS-KDH:
+	(*session)->security_parameters.client_cert_type = DEFAULT_CERT_TYPE;
+	(*session)->security_parameters.server_cert_type = DEFAULT_CERT_TYPE;
+	// end
 
 	/* Initialize buffers */
 	_gnutls_buffer_init(&(*session)->internals.handshake_hash_buffer);
@@ -421,7 +544,7 @@ int gnutls_init(gnutls_session_t * session, unsigned int flags)
 
 	if (flags & GNUTLS_NO_REPLAY_PROTECTION)
 		(*session)->internals.no_replay_protection = 1;
-
+	
 	return 0;
 }
 
