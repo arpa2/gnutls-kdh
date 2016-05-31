@@ -1831,6 +1831,7 @@ _gnutls_gen_cert_server_cert_req(gnutls_session_t session,
 		if (ret < 0)
 			return gnutls_assert_val(ret);
 	} else {
+		// Write RDN length of 0 to buffer to indicate for no RDN's
 		ret = _gnutls_buffer_append_prefix(data, 16, 0);
 		if (ret < 0)
 			return gnutls_assert_val(ret);

@@ -489,6 +489,9 @@ int gnutls_pcert_import_openpgp_raw(gnutls_pcert_st * pcert,
 int gnutls_pcert_import_openpgp(gnutls_pcert_st * pcert,
 				gnutls_openpgp_crt_t crt,
 				unsigned int flags);
+				
+int gnutls_pcert_import_krb_raw( gnutls_pcert_st* pcert,
+				    const gnutls_datum_t* ticket, unsigned int flags );				
 
 int gnutls_pcert_export_openpgp(gnutls_pcert_st * pcert,
                                 gnutls_openpgp_crt_t * crt);

@@ -93,7 +93,7 @@ int gnutls_certificate_set_krb_ticket( gnutls_certificate_credentials_t cred,
 {
 	int ret;
 	gnutls_privkey_t privkey;
-	gnutls_pcert_st* ccert;
+	gnutls_pcert_st* pcert;
 
 	
 	/* GnuTLS' %certificate_credentials_st keeps two data structures for 
@@ -128,30 +128,28 @@ int gnutls_certificate_set_krb_ticket( gnutls_certificate_credentials_t cred,
 	
 	/* Now we prepare our certificate structure to hold our ticket. */
 	// Allocate some memory
-	ccert = gnutls_calloc( 1, sizeof( *ccert ) );
-	if( ccert == NULL ) 
+	pcert = gnutls_calloc( 1, sizeof( *pcert ) );
+	if( pcert == NULL ) 
 	{
 		gnutls_assert();
 		gnutls_privkey_deinit( privkey );
 		return GNUTLS_E_MEMORY_ERROR;
 	}
 	// Copy our ticket to the certificate structure
-	ccert->pubkey = NULL;
-	ccert->cert 	= *ticket;
-	ccert->type 	= GNUTLS_CRT_KRB;
+	gnutls_pcert_import_krb_raw( pcert, ticket, 0 );
 	
 	// Add the dummy key to the credentials structure
 	ret = certificate_credentials_append_pkey( cred, privkey );
 	// Add the certificate with our ticket to the credentials structure
 	if( ret >= 0 )
-		ret = certificate_credential_append_crt_list( cred, NULL, ccert, 1 );
+		ret = certificate_credential_append_crt_list( cred, NULL, pcert, 1 );
 	
 	// Check for errors
 	if( ret < 0 ) 
 	{
 		gnutls_assert();
 		gnutls_privkey_deinit( privkey );
-		gnutls_free( ccert );
+		gnutls_free( pcert );
 		return ret;
 	}						   
 							   
@@ -164,4 +162,4 @@ int gnutls_certificate_set_krb_ticket( gnutls_certificate_credentials_t cred,
 	
 	// OK
 	return GNUTLS_E_SUCCESS;
-}																	
+}						

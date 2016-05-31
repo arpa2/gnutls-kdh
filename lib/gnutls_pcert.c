@@ -406,6 +406,51 @@ int gnutls_pcert_import_openpgp_raw(gnutls_pcert_st * pcert,
 
 #endif
 
+//TODO implement #ifdef ENABLE_KRB
+/**
+ * gnutls_pcert_import_krb_raw:
+ * @pcert: The pcert structure
+ * @cert: The raw certificate to be imported
+ * @flags: zero for now
+ *
+ * This convenience function will import the given certificate to a
+ * #gnutls_pcert_st structure. The structure must be deinitialized
+ * afterwards using gnutls_pcert_deinit();
+ *
+ * Returns: On success, %GNUTLS_E_SUCCESS (0) is returned, otherwise a
+ *   negative error value.
+ *
+ * Since: TODO
+ **/
+int gnutls_pcert_import_krb_raw( gnutls_pcert_st* pcert,
+				    const gnutls_datum_t* ticket, unsigned int flags )
+{
+	int ret;
+
+	// Reset our pcert memory to all zeros
+	memset( pcert, 0, sizeof(*pcert) );
+
+	// Initialize our public key structure
+	ret = gnutls_pubkey_init( &pcert->pubkey );
+	if( ret < 0 )
+	{
+		gnutls_assert();
+		return ret;
+	}
+	
+	/* Copy our ticket to the certificate structure. We actually don't
+	 * use our public key structure to store a public key. We use it to
+	 * keep track of the fact that we are using a kerberos authentication
+	 * mechanism.
+	 */
+	pcert->pubkey->pk_algorithm = GNUTLS_PK_KDH;
+	pcert->cert 								= *ticket;
+	pcert->type 								= GNUTLS_CRT_KRB;	
+
+	return GNUTLS_E_SUCCESS;
+}
+//TODO implement #endif
+
 /**
  * gnutls_pcert_export_x509:
  * @pcert: The pcert structure.

@@ -200,10 +200,10 @@ static void _gnutls_kdh_trf_deinit( extension_priv_data_t priv )
  * Returns: On success, %GNUTLS_E_SUCCESS (0) is returned,
  *   otherwise a negative error code is returned.
  * 
- * Since 3.4.7
+ * Since TODO
  **/ 
-int gnutls_kdh_trf_get( gnutls_session_t session, gnutls_kdh_trf_t* flags ) {
-	
+int gnutls_kdh_trf_get( gnutls_session_t session, gnutls_kdh_trf_t* flags ) 
+{	
 	int ret = 0;
 	gnutls_kdh_trf_st* trf;
 	extension_priv_data_t epriv;
@@ -230,10 +230,10 @@ int gnutls_kdh_trf_get( gnutls_session_t session, gnutls_kdh_trf_t* flags ) {
  * @session: is a #gnutls_session_t type.
  * @flags: the ticket request flags.
  * 
- * Since 3.4.7
+ * Since TODO
  **/
-int gnutls_kdh_trf_set( gnutls_session_t session, gnutls_kdh_trf_t flags ) {
-	
+int gnutls_kdh_trf_set( gnutls_session_t session, gnutls_kdh_trf_t flags ) 
+{	
 	int ret = 0;
 	gnutls_kdh_trf_st* trf;
 	
