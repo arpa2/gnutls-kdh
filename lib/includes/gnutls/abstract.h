@@ -439,6 +439,9 @@ int gnutls_x509_crq_privkey_sign(gnutls_x509_crq_t crq,
 				 gnutls_digest_algorithm_t dig,
 				 unsigned int flags);
 
+int gnutls_privkey_generate_krb( gnutls_privkey_t pkey,
+				unsigned int flags);
+
 /**
  * gnutls_pcert_st:
  * @pubkey: public key of parsed certificate.
