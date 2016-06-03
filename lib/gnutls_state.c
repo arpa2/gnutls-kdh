@@ -134,6 +134,52 @@ gnutls_certificate_type_get(gnutls_session_t session)
 
 // ARPA2 added by TomV for TLS-KDH:
 /**
+ * gnutls_certificate_type_get2:
+ * @session: is a #gnutls_session_t type.
+ * @ctype: is a #gnutls_ctype_mode_t type.
+ *
+ * The raw certificate type extension (RFC7250) introduces a mechanism
+ * to specifcy asymmetric certificate types for client and server. We
+ * therefor distinguish between negotiated certificate types for the
+ * client and server. The @ctype parameter specifies whether you want
+ * the negotiated certificate type for the client (GNUTLS_CTYPE_CLIENT)
+ * or for the server (GNUTLS_CTYPE_SERVER). In case asymmetric mode is
+ * not active the 'old' symmetric certificate type will be returned.
+ * In that case GNUTLS_CTYPE_IGNORE should be passed to @ctype in order
+ * to promote code readability. All value passed to @ctype will be
+ * ignored however.
+ *
+ * Returns: the currently used #gnutls_certificate_type_t certificate
+ *   type for the client or the server.
+ *
+ * Since TODO
+ **/
+gnutls_certificate_type_t
+gnutls_certificate_type_get2( gnutls_session_t session,
+															gnutls_ctype_mode_t ctype )
+{
+	// Check whether we operate in asymmetric mode
+	if( _gnutls_asym_cert_types( session ) )
+	{
+		switch( ctype )
+		{
+			case GNUTLS_CTYPE_CLIENT:
+				return gnutls_client_certificate_type_get( session );
+				break;
+			case GNUTLS_CTYPE_SERVER:
+				return gnutls_server_certificate_type_get( session );
+				break;
+			default: // Illegal parameter passed
+				gnutls_assert();
+				return GNUTLS_CRT_UNKNOWN;
+		}
+	} else
+	{ // Symmetric mode
+		return gnutls_certificate_type_get( session );
+	}
+}
+
+/**
  * gnutls_client_certificate_type_get:
  * @session: is a #gnutls_session_t type.
  *
@@ -225,8 +271,8 @@ gnutls_compression_get(gnutls_session_t session)
 	return record_params->compression_algorithm;
 }
 
-/*
- * 
+/* Check whether certificate credentials of type @cert_type are set
+ * for the current session.
  */
 int _gnutls_check_cert_credentials_set( gnutls_session_t session,
 						gnutls_certificate_type_t cert_type )
@@ -307,10 +353,10 @@ _gnutls_session_cert_type_supported( gnutls_session_t session,
 		// Which certificate type should we query?
 		switch( ctype_mode )
 		{
-			case CTYPE_CLIENT:
+			case GNUTLS_CTYPE_CLIENT:
 				ctype_priorities = &(session->internals.priorities.client_cert_type);
 				break;
-			case CTYPE_SERVER:
+			case GNUTLS_CTYPE_SERVER:
 				ctype_priorities = &(session->internals.priorities.server_cert_type);
 				break;
 			default:

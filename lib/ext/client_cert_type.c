@@ -169,7 +169,7 @@ static int _gnutls_client_cert_type_recv_params( gnutls_session_t session,
 		 
 			// Check for support of this cert type
 			if( _gnutls_session_cert_type_supported( session, cert_type, 
-						false, CTYPE_CLIENT ) == 0 ) 
+						false, GNUTLS_CTYPE_CLIENT ) == 0 ) 
 			{
 				found = 1;
 				break;
@@ -242,7 +242,8 @@ static int _gnutls_client_cert_type_send_params( gnutls_session_t session,
 			for( i = 0; i < cert_priors->algorithms; i++ ) 
 			{
 				if( _gnutls_session_cert_type_supported( session, 
-								cert_priors->priority[i], true, CTYPE_CLIENT ) == 0 ) 
+								cert_priors->priority[i], true, 
+								GNUTLS_CTYPE_CLIENT ) == 0 ) 
 				{
 					cert_type = _gnutls_cert_type2num( cert_priors->priority[i] );
 					ret 			= _gnutls_datum_append( cert_types, &cert_type, 1 );

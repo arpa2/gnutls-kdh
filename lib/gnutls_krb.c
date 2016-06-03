@@ -124,7 +124,7 @@ int gnutls_certificate_set_krb_ticket( gnutls_certificate_credentials_t cred,
 	 * parsing errors if we are not able to tell that this is just a
 	 * dummy.
 	 */
-	privkey->type = GNUTLS_PRIVKEY_KRB;
+	gnutls_privkey_generate_krb( privkey, 0 );
 	
 	/* Now we prepare our certificate structure to hold our ticket. */
 	// Allocate some memory

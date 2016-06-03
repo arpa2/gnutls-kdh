@@ -1402,3 +1402,37 @@ _gnutls_privkey_get_preferred_sign_algo(gnutls_privkey_t key)
 	}
 	return key->preferred_sign_algo;
 }
+
+//TODO implement #ifdef ENABLE_KRB
+/**
+ * gnutls_privkey_generate_krb:
+ * @pkey: The private key
+ * @flags: unused for now. Must be 0.
+ *
+ * This function will generate a dummy private key to be used in
+ * conjunction with a Kerberos ticket. Because of the nature of GNUTLS
+ * certificate credentials require both a public and private key.
+ * Because a Kerberos ticket will be stored inside a #gnutls_pcert_t,
+ * we need a dummy privkey to keep the internal datastructures in sync.
+ * Note that this function must be called on an empty private key.
+ *
+ * Returns: On success, %GNUTLS_E_SUCCESS (0) is returned, otherwise a
+ *   negative error value.
+ *
+ * Since: TODO
+ **/
+int
+gnutls_privkey_generate_krb( gnutls_privkey_t pkey, unsigned int flags)
+{
+	if( pkey == NULL )
+	{
+		gnutls_assert();
+		return GNUTLS_E_ILLEGAL_PARAMETER;
+	}
+
+	pkey->type 				 = GNUTLS_PRIVKEY_KRB;
+	pkey->pk_algorithm = GNUTLS_PK_KDH;
+
+	return GNUTLS_E_SUCCESS;
+}
+//TODO implement #endif

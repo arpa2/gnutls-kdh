@@ -280,12 +280,6 @@ typedef enum extensions_t {
 
 typedef enum { CIPHER_STREAM, CIPHER_BLOCK, CIPHER_AEAD } cipher_type_t;
 
-typedef enum {
-	CTYPE_CLIENT,
-	CTYPE_SERVER,
-	CTYPE_IGNORE
-} gnutls_ctype_mode_t;
-
 #define RESUME_TRUE 1
 #define RESUME_FALSE 0
 
@@ -532,6 +526,8 @@ typedef struct {
 	uint8_t hash_algorithm;
 	uint8_t sign_algorithm;	/* pk algorithm actually */
 } sign_algorithm_st;
+/* REMARK: why not call the above struct sig_hash_alg_st or something
+ * like that? Now it is not clear that it also contains a hash type. */
 
 /* This structure holds parameters got from TLS extension
  * mechanism. (some extensions may hold parameters in auth_info_t

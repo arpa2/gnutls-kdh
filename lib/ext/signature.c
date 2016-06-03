@@ -20,7 +20,7 @@
  *
  */
 
-/* This file contains the code the Certificate Type TLS extension.
+/* This file contains the code for the Signature Algorithms TLS extension.
  * This extension is currently gnutls specific.
  */
 
@@ -193,8 +193,7 @@ _gnutls_signature_algorithm_recv_params(gnutls_session_t session,
 		 */
 		/* return GNUTLS_E_UNEXPECTED_PACKET; */
 	} else {
-		/* SERVER SIDE - we must check if the sent cert type is the right one
-		 */
+		/* SERVER SIDE */
 		if (data_size > 2) {
 			uint16_t len;
 
