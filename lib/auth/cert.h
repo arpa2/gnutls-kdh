@@ -79,6 +79,12 @@ typedef struct gnutls_certificate_credentials_st {
 
 	gnutls_certificate_verify_function *verify_callback;
 
+//TODO implement #ifdef ENABLE_KRB
+	/* KDH specific stuff */
+	gnutls_authenticator_retrieve_function *get_authenticator_callback;
+	gnutls_client_crt_vrfy_hash_retrieve_function *get_client_crt_vrfy_hash_callback;
+//TODO implement #endif
+
 	struct pin_info_st pin;
 	/* temporarily hold the PIN if set_key_file2() is used with a PIN */
 	char pin_tmp[GNUTLS_PKCS11_MAX_PIN_LEN];
@@ -161,4 +167,11 @@ int _gnutls_proc_dhe_signature(gnutls_session_t session, uint8_t * data,
 			       size_t _data_size,
 			       gnutls_datum_t * vparams);
 
+// ARPA2 added by TomV & RickvR for TLS-KDH:
+int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session, 
+																				gnutls_buffer_st* data );
+
+int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
+				  uint8_t* data, size_t data_size );			       
+// end
 #endif

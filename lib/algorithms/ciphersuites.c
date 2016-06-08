@@ -346,16 +346,16 @@
 #define GNUTLS_ECDHE_KDH_AES_256_CCM {0xFF, 0xA5}
 #define GNUTLS_ECDHE_KDH_AES_128_CCM_8 {0xFF, 0xA6}
 #define GNUTLS_ECDHE_KDH_AES_256_CCM_8 {0xFF, 0xA7}
-//#define GNUTLS_ECDHE_KDH_ARIA_128_GCM_SHA256 {0xFF, 0xA8}
-//#define GNUTLS_ECDHE_KDH_ARIA_256_GCM_SHA384 {0xFF, 0xA9}
+//#define GNUTLS_ECDHE_KDH_ARIA_128_GCM_SHA256 {0xFF, 0xA8} TODO uncomment when ARIA is implemented
+//#define GNUTLS_ECDHE_KDH_ARIA_256_GCM_SHA384 {0xFF, 0xA9} TODO uncomment when ARIA is implemented
 #define GNUTLS_ECDHE_KDH_CAMELLIA_128_GCM_SHA256 {0xFF, 0xAA}
 #define GNUTLS_ECDHE_KDH_CAMELLIA_256_GCM_SHA384 {0xFF, 0xAB}
+//TODO add combo's
 /* end */
 
 
 #define CIPHER_SUITES_COUNT (sizeof(cs_algorithms)/sizeof(gnutls_cipher_suite_entry_st)-1)
 
-//TODO: update entries met verify_data_length waardes
 
 /* The following is a potential list of ciphersuites. For the options to be
  * available, the ciphers and MACs must be available to gnutls as well.
@@ -1217,7 +1217,7 @@ static const gnutls_cipher_suite_entry_st cs_algorithms[] = {
 //TODO: Add: #ifdef ENABLE_KDH
 	ENTRY_PRF(GNUTLS_ECDHE_KDH_AES_128_GCM_SHA256,
 				GNUTLS_CIPHER_AES_128_GCM,
-				GNUTLS_KX_ECDHE_KDH,
+				GNUTLS_KX_ECDHE_KRB,
 				GNUTLS_MAC_SHA256,
 				GNUTLS_TLS1_2,
 				GNUTLS_DTLS1_2,
@@ -1225,7 +1225,7 @@ static const gnutls_cipher_suite_entry_st cs_algorithms[] = {
 				32),
 	ENTRY_PRF(GNUTLS_ECDHE_KDH_AES_256_GCM_SHA384,
 				GNUTLS_CIPHER_AES_256_GCM,
-				GNUTLS_KX_ECDHE_KDH,
+				GNUTLS_KX_ECDHE_KRB,
 				GNUTLS_MAC_SHA384,
 				GNUTLS_TLS1_2,
 				GNUTLS_DTLS1_2,
@@ -1233,7 +1233,7 @@ static const gnutls_cipher_suite_entry_st cs_algorithms[] = {
 				48),
 	ENTRY_PRF(GNUTLS_ECDHE_KDH_AES_256_GCM_SHA512,
 				GNUTLS_CIPHER_AES_256_GCM,
-				GNUTLS_KX_ECDHE_KDH,
+				GNUTLS_KX_ECDHE_KRB,
 				GNUTLS_MAC_SHA512,
 				GNUTLS_TLS1_2,
 				GNUTLS_DTLS1_2,
@@ -1241,7 +1241,7 @@ static const gnutls_cipher_suite_entry_st cs_algorithms[] = {
 				64),
 	ENTRY_PRF(GNUTLS_ECDHE_KDH_AES_128_CCM,
 				GNUTLS_CIPHER_AES_128_CCM,
-				GNUTLS_KX_ECDHE_KDH,
+				GNUTLS_KX_ECDHE_KRB,
 				GNUTLS_MAC_NULL,
 				GNUTLS_TLS1_2,
 				GNUTLS_DTLS1_2,
@@ -1249,7 +1249,7 @@ static const gnutls_cipher_suite_entry_st cs_algorithms[] = {
 				32),
 	ENTRY_PRF(GNUTLS_ECDHE_KDH_AES_256_CCM,
 				GNUTLS_CIPHER_AES_256_CCM,
-				GNUTLS_KX_ECDHE_KDH,
+				GNUTLS_KX_ECDHE_KRB,
 				GNUTLS_MAC_NULL,
 				GNUTLS_TLS1_2,
 				GNUTLS_DTLS1_2,
@@ -1257,7 +1257,7 @@ static const gnutls_cipher_suite_entry_st cs_algorithms[] = {
 				48),
 	ENTRY_PRF(GNUTLS_ECDHE_KDH_AES_128_CCM_8,
 				GNUTLS_CIPHER_AES_128_CCM_8,
-				GNUTLS_KX_ECDHE_KDH,
+				GNUTLS_KX_ECDHE_KRB,
 				GNUTLS_MAC_NULL,
 				GNUTLS_TLS1_2,
 				GNUTLS_DTLS1_2,
@@ -1265,7 +1265,7 @@ static const gnutls_cipher_suite_entry_st cs_algorithms[] = {
 				32),
 	ENTRY_PRF(GNUTLS_ECDHE_KDH_AES_256_CCM_8,
 				GNUTLS_CIPHER_AES_256_CCM_8,
-				GNUTLS_KX_ECDHE_KDH,
+				GNUTLS_KX_ECDHE_KRB,
 				GNUTLS_MAC_NULL,
 				GNUTLS_TLS1_2,
 				GNUTLS_DTLS1_2,
@@ -1273,7 +1273,7 @@ static const gnutls_cipher_suite_entry_st cs_algorithms[] = {
 				48),
 	/*ENTRY_PRF(GNUTLS_ECDHE_KDH_ARIA_128_GCM_SHA256,
 				GNUTLS_CIPHER_,
-				GNUTLS_KX_ECDHE_KDH,
+				GNUTLS_KX_ECDHE_KRB,
 				GNUTLS_MAC_SHA256,
 				//min tls ver,
 				//min dtls ver,
@@ -1281,7 +1281,7 @@ static const gnutls_cipher_suite_entry_st cs_algorithms[] = {
 				32),
 	ENTRY_PRF(GNUTLS_ECDHE_KDH_ARIA_256_GCM_SHA384,
 				GNUTLS_CIPHER_,
-				GNUTLS_KX_ECDHE_KDH,
+				GNUTLS_KX_ECDHE_KRB,
 				GNUTLS_MAC_SHA384,
 				//min tls ver,
 				//min dtls ver,
@@ -1289,7 +1289,7 @@ static const gnutls_cipher_suite_entry_st cs_algorithms[] = {
 				48),*/
 	ENTRY_PRF(GNUTLS_ECDHE_KDH_CAMELLIA_128_GCM_SHA256,
 				GNUTLS_CIPHER_CAMELLIA_128_GCM,
-				GNUTLS_KX_ECDHE_KDH,
+				GNUTLS_KX_ECDHE_KRB,
 				GNUTLS_MAC_SHA256,
 				GNUTLS_TLS1_2,
 				GNUTLS_DTLS1_2,
@@ -1297,7 +1297,7 @@ static const gnutls_cipher_suite_entry_st cs_algorithms[] = {
 				32),
 	ENTRY_PRF(GNUTLS_ECDHE_KDH_CAMELLIA_256_GCM_SHA384,
 				GNUTLS_CIPHER_CAMELLIA_256_GCM,
-				GNUTLS_KX_ECDHE_KDH,
+				GNUTLS_KX_ECDHE_KRB,
 				GNUTLS_MAC_SHA384,
 				GNUTLS_TLS1_2,
 				GNUTLS_DTLS1_2,

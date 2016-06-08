@@ -199,10 +199,9 @@ typedef enum {
 	GNUTLS_KX_ECDHE_PSK = 14,
 	GNUTLS_KX_RSA_PSK = 15,
 	// ARPA2 added by TomV & RickvR for TLS-KDH:
-	GNUTLS_KX_ECDHE_KDH = 16,
-	GNUTLS_KX_ECDHE_KDH_RSA = 17,
-	GNUTLS_KX_ECDHE_KDH_ECDSA = 18,
-	GNUTLS_KX_ECDHE_KDH_DSA = 19,
+	GNUTLS_KX_ECDHE_KRB = 16,
+	GNUTLS_KX_ECDHE_KRB_RSA = 17,
+	GNUTLS_KX_ECDHE_KRB_ECDSA = 18
 	// end
 } gnutls_kx_algorithm_t;
 
@@ -681,7 +680,7 @@ typedef enum {
 	GNUTLS_PK_DH = 3,
 	GNUTLS_PK_EC = 4,
 	// ARPA2 added by TomV for TLS-KDH: 
-	GNUTLS_PK_KDH = 5
+	GNUTLS_PK_KDH = 5 //TODO remove?
 	// end
 } gnutls_pk_algorithm_t;
 

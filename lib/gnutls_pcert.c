@@ -550,7 +550,7 @@ void gnutls_pcert_deinit(gnutls_pcert_st * pcert)
 	_gnutls_free_datum(&pcert->cert);
 }
 
-/* Converts the first certificate for the cert_auth_info structure
+/* Converts the first certificate of the cert_auth_info structure
  * to a pcert.
  */
 int

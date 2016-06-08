@@ -349,7 +349,7 @@ find_openpgp_cert(const gnutls_certificate_credentials_t cred,
 }
 #endif
 
-//TODO implement ifdef: #ifdef ENABLE_OPENPGP
+//TODO implement ifdef: #ifdef ENABLE_KDH
 /* Locates the first certificate that holds a kerberos ticket.  
  * It only makes sense to associate one kerberos ticket per session.
  * GNUTLS cannot make a distinction between tickets based on their 
@@ -768,7 +768,7 @@ select_client_cert(gnutls_session_t session,
 																pk_algos_length, &indx);
 				break;
 #endif
-//TODO implement ifdef #ifdef ENABLE_KRB				
+//TODO implement ifdef #ifdef ENABLE_KDH				
 			case GNUTLS_CRT_KRB:
 				result = find_krb_cert(cred, pk_algos,
 																pk_algos_length, &indx);
@@ -1865,6 +1865,7 @@ _gnutls_proc_cert_client_crt_vrfy(gnutls_session_t session,
 	gnutls_pcert_st peer_cert;
 	gnutls_sign_algorithm_t sign_algo = GNUTLS_SIGN_UNKNOWN;
 	const version_entry_st *ver = get_version(session);
+	gnutls_certificate_type_t cert_type;
 
 	if (unlikely(info == NULL || info->ncerts == 0 || ver == NULL)) {
 		gnutls_assert();
@@ -1900,9 +1901,10 @@ _gnutls_proc_cert_client_crt_vrfy(gnutls_session_t session,
 	sig.data = pdata;
 	sig.size = size;
 
-	ret = _gnutls_get_auth_info_pcert(&peer_cert,
-					  session->security_parameters.
-					  cert_type, info);
+	// Retrieve the negotiated certificate type
+	cert_type = gnutls_certificate_type_get2( session, GNUTLS_CTYPE_CLIENT );
+
+	ret = _gnutls_get_auth_info_pcert(&peer_cert, cert_type, info);
 
 	if (ret < 0) {
 		gnutls_assert();
@@ -2324,13 +2326,7 @@ _gnutls_server_select_cert(gnutls_session_t session,
 	 * based on whether we operate in asymmetric certificate type 
 	 * mode (RFC7250) or not.
 	 */
-	if( _gnutls_asym_cert_types( session ) )
-	{
-		cert_type = session->security_parameters.server_cert_type;
-	} else
-	{
-		cert_type = session->security_parameters.cert_type;
-	}
+	 cert_type = gnutls_certificate_type_get2( session, GNUTLS_CTYPE_SERVER );
 	// end
 
 	/* find certificates that match the requested server_name
@@ -2524,6 +2520,7 @@ _gnutls_proc_dhe_signature(gnutls_session_t session, uint8_t * data,
 	gnutls_pcert_st peer_cert;
 	gnutls_sign_algorithm_t sign_algo = GNUTLS_SIGN_UNKNOWN;
 	const version_entry_st *ver = get_version(session);
+	gnutls_certificate_type_t cert_type;
 
 	if (unlikely(info == NULL || info->ncerts == 0 || ver == NULL)) {
 		gnutls_assert();
@@ -2556,10 +2553,12 @@ _gnutls_proc_dhe_signature(gnutls_session_t session, uint8_t * data,
 	signature.data = data;
 	signature.size = sigsize;
 
+	// Retrieve the negotiated certificate type
+	cert_type = gnutls_certificate_type_get2( session, GNUTLS_CTYPE_SERVER );
+
 	if ((ret =
-	     _gnutls_get_auth_info_pcert(&peer_cert,
-					 session->security_parameters.cert_type,
-					 info)) < 0) {
+	     _gnutls_get_auth_info_pcert(&peer_cert, cert_type, info)) < 0) 
+	{
 		gnutls_assert();
 		return ret;
 	}
@@ -2573,6 +2572,226 @@ _gnutls_proc_dhe_signature(gnutls_session_t session, uint8_t * data,
 		gnutls_assert();
 		return ret;
 	}
+
+	return 0;
+}
+
+
+//TODO maybe put in different file
+
+int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session, 
+																				gnutls_buffer_st* data )
+{
+	int ret;
+	gnutls_pcert_st* apr_cert_list; // kerberos ticket
+	gnutls_privkey_t apr_pkey;
+	int apr_cert_list_length;
+	gnutls_sign_algorithm_t sh_algo; // sign & hash algoritm
+	const mac_entry_st *me;
+	const sign_algorithm_st *aid;
+	uint8_t hash[MAX_HASH_SIZE];
+	gnutls_datum_t dhash;
+	gnutls_datum_t authenticator;
+	gnutls_certificate_credentials_t cred;
+	
+	
+	// Check whether there are credentials set
+	cred = (gnutls_certificate_credentials_t)
+	    _gnutls_get_cred( session, GNUTLS_CRD_CERTIFICATE );
+	if( cred == NULL )
+	{
+		gnutls_assert();
+		return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
+	}	
+
+	/* Retrieve the negotiated certificate. This should be our
+	 * kerberos ticket.
+	 */
+	ret = _gnutls_get_selected_cert( session, &apr_cert_list,
+																	&apr_cert_list_length, &apr_pkey ); 
+	if( ret < 0 )
+	{
+		gnutls_assert();
+		return ret;
+	}
+
+	/* Check whether the certificate with our ticket is set */
+	if( apr_cert_list_length > 0 )
+	{
+		/* Get the prefered signature & hash algorithm. In our case this
+		 * should be one of the GNUTLS_SIGN_KDH_* algos. These algos
+		 * dictate a kerberos authenticator, as a signature equivalent,
+		 * and a specific hash algorithm.
+		 */
+		// Retrieve a preferred algo from the private key, if one is set.
+		sh_algo = _gnutls_privkey_get_preferred_sign_algo( apr_pkey );
+		
+		if( sh_algo == GNUTLS_SIGN_UNKNOWN || 
+				_gnutls_session_sign_algo_enabled( session, sh_algo ) < 0 )
+		{
+			/* There is no prefered key set in the private key or it is not 
+			 * enabled on the client. Therefor choose a matching algorithm 
+			 * from the signature_algorithms extension.
+			 */
+			sh_algo = _gnutls_session_get_sign_algo( session, apr_cert_list );
+			if( sh_algo == GNUTLS_SIGN_UNKNOWN )
+			{
+				gnutls_assert();
+				return GNUTLS_E_UNKNOWN_PK_ALGORITHM;
+			}
+		}
+		
+		// Set the signature & hash algorithm
+		gnutls_sign_algorithm_set_client( session, sh_algo );
+		
+		/* Convert the internal representation of the signature & hash 
+		 * algorithm to a tuple containing the signature and hash 
+		 * identifiers from the IANA TLS SignatureAlgorithm and 
+		 * HashAlgorithm Registries. We need the value for the hash
+		 * algorithm to be passed on to the callback function in order to
+		 * ID the hash that has been used.
+		 */
+		aid = _gnutls_sign_to_tls_aid( sh_algo );
+		if( aid == NULL )
+			return gnutls_assert_val( GNUTLS_E_UNKNOWN_ALGORITHM );
+		
+		/* First we are going to hash all the handshake messages passed
+		 * back and forth thusfar, just as for the regular client
+		 * certificate verifiy message. However, we are not going to sign
+		 * this hash because we don't have a pki in place.
+		 */
+		me = hash_to_entry( gnutls_sign_get_hash_algorithm( sh_algo ) );
+
+		ret = _gnutls_hash_fast( (gnutls_digest_algorithm_t)me->id,
+											session->internals.handshake_hash_buffer.data,
+											session->internals.handshake_hash_buffer.length,
+											hash );
+		if( ret < 0 )	return gnutls_assert_val(ret);
+
+		// Store our hash as a datum_t type to easy handling
+		dhash.data = hash;
+		dhash.size = _gnutls_hash_get_algo_len( me );
+		
+		/* We are now going to pass this hash to a callback function that
+		 * wraps it into a kerberos authenticator.
+		 */
+		if( cred->get_authenticator_callback )
+		{
+			ret = cred->get_authenticator_callback( &authenticator,
+																							&dhash,
+																							aid->hash_algorithm );
+			if( ret < 0 ) return gnutls_assert_val( GNUTLS_E_USER_ERROR );			
+		} 
+		else
+		{
+			/* No callback was set in order to retrieve an authenticator
+			 * so we can't continue the handshake.
+			 */
+			return gnutls_assert_val( GNUTLS_E_USER_ERROR );
+		}
+		 
+		/* Now that we have the authenticator we are going to serialize it
+		 * into the output buffer so that it can be transmitted to the 
+		 * peer.
+		 */ 
+		ret = _gnutls_buffer_append_data_prefix( data, 16, 
+																						authenticator.data,
+																						authenticator.size );
+		// Cleanup
+		_gnutls_free_datum( &authenticator );
+		
+		// Check for errors
+		if( ret < 0 )
+		{
+			gnutls_assert();
+			return ret;
+		}
+		
+		// Log our choice for debugging
+		_gnutls_debug_log("sign handshake cert vrfy: picked %s with %s\n",
+			  gnutls_sign_algorithm_get_name( sh_algo ),
+			  _gnutls_mac_get_name( me ));
+		
+		// All OK
+		return data->length;
+		
+	} else 
+	{
+		/* This should not happen since we already sent the ticket in the
+		 * client certificate message. */
+		return 0;
+	}
+}
+
+int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
+				  uint8_t* data, size_t data_size )
+{
+	int size, ret;
+	ssize_t dsize = data_size;
+	uint8_t *pdata = data;
+	gnutls_datum_t sig;
+	cert_auth_info_t info = _gnutls_get_auth_info(session, GNUTLS_CRD_CERTIFICATE);
+	gnutls_pcert_st peer_cert;
+	gnutls_sign_algorithm_t sign_algo = GNUTLS_SIGN_UNKNOWN;
+	const version_entry_st *ver = get_version(session);
+	gnutls_certificate_type_t cert_type;
+	
+	//1) authenticator inlezen en beschikbaar maken voor applicatie
+	
+	
+
+	if (unlikely(info == NULL || info->ncerts == 0 || ver == NULL)) {
+		gnutls_assert();
+		/* we need this in order to get peer's certificate */
+		return GNUTLS_E_INTERNAL_ERROR;
+	}
+
+	if (_gnutls_version_has_selectable_sighash(ver)) {
+		sign_algorithm_st aid;
+
+		DECR_LEN(dsize, 2);
+		aid.hash_algorithm = pdata[0];
+		aid.sign_algorithm = pdata[1];
+
+		sign_algo = _gnutls_tls_aid_to_sign(&aid);
+		if (sign_algo == GNUTLS_SIGN_UNKNOWN) {
+			gnutls_assert();
+			return GNUTLS_E_UNSUPPORTED_SIGNATURE_ALGORITHM;
+		}
+		pdata += 2;
+	}
+
+	ret = _gnutls_session_sign_algo_enabled(session, sign_algo);
+	if (ret < 0)
+		return gnutls_assert_val(GNUTLS_E_UNSUPPORTED_SIGNATURE_ALGORITHM);
+
+	DECR_LEN(dsize, 2);
+	size = _gnutls_read_uint16(pdata);
+	pdata += 2;
+
+	DECR_LEN_FINAL(dsize, size);
+
+	sig.data = pdata;
+	sig.size = size;
+
+	// Retrieve the negotiated certificate type
+	cert_type = gnutls_certificate_type_get2( session, GNUTLS_CTYPE_CLIENT );
+
+	ret = _gnutls_get_auth_info_pcert(&peer_cert, cert_type, info);
+
+	if (ret < 0) {
+		gnutls_assert();
+		return ret;
+	}
+
+	if ((ret =
+	     _gnutls_handshake_verify_crt_vrfy(session, &peer_cert, &sig,
+					       sign_algo)) < 0) {
+		gnutls_assert();
+		gnutls_pcert_deinit(&peer_cert);
+		return ret;
+	}
+	gnutls_pcert_deinit(&peer_cert);
 
 	return 0;
 }

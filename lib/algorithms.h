@@ -335,7 +335,8 @@ static inline int _gnutls_kx_is_ecc(gnutls_kx_algorithm_t kx)
 {
 	if (kx == GNUTLS_KX_ECDHE_RSA || kx == GNUTLS_KX_ECDHE_ECDSA ||
 	    kx == GNUTLS_KX_ANON_ECDH || kx == GNUTLS_KX_ECDHE_PSK ||
-	    kx == GNUTLS_KX_ECDHE_KDH) // ARPA2 added by TomV for TLS-KDH
+	    kx == GNUTLS_KX_ECDHE_KRB || kx == GNUTLS_KX_ECDHE_KRB_RSA ||
+	    kx == GNUTLS_KX_ECDHE_KRB_ECDSA) // ARPA2 added by TomV for TLS-KDH
 		return 1;
 
 	return 0;

@@ -42,13 +42,20 @@
 #include <auth/cert.h>
 #include <gnutls_pk.h>
 
+#include "auth/anon.h"
+
 static int gen_ecdhe_server_kx(gnutls_session_t, gnutls_buffer_st *);
-static int
-proc_ecdhe_server_kx(gnutls_session_t session,
+static int proc_ecdhe_server_kx(gnutls_session_t session,
 		     uint8_t * data, size_t _data_size);
-static int
-proc_ecdhe_client_kx(gnutls_session_t session,
+static int proc_ecdhe_client_kx(gnutls_session_t session,
 		     uint8_t * data, size_t _data_size);
+
+static int gen_krb_ecdhe_server_kx(gnutls_session_t session, 
+				 gnutls_buffer_st * data);
+static int proc_krb_ecdhe_server_kx(gnutls_session_t session,
+				 uint8_t * data, size_t _data_size);
+static int proc_krb_ecdhe_client_kx(gnutls_session_t session, 
+				 uint8_t * data, size_t _data_size);
 
 #if defined(ENABLE_ECDHE)
 const mod_auth_st ecdhe_ecdsa_auth_struct = {
@@ -86,69 +93,72 @@ const mod_auth_st ecdhe_rsa_auth_struct = {
 };
 
 // ARPA2 added by TomV & RickvR for TLS-KDH:
-const mod_auth_st ecdhe_kdh_auth_struct = {//TODO: finish
-	"ECDHE_KDH",
-	NULL, // don't need it
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	
+const mod_auth_st ecdhe_krb_auth_struct = {//TODO: finish
+	"ECDHE_KRB",
+	NULL, // server is anonymous, so no server cert
+	_gnutls_gen_cert_client_crt,//OK
+	gen_krb_ecdhe_server_kx, //OK //Kx without signature, no privkey available.
+	_gnutls_gen_ecdh_common_client_kx,
+	_gnutls_gen_cert_client_crt_vrfy, // TODO new function
+	_gnutls_gen_cert_server_cert_req, //OK
+
+	NULL, // server is anonymous, so no server cert processing
 	_gnutls_proc_crt,
-	_gnutls_proc_crt,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+	proc_krb_ecdhe_server_kx,//OK // Kx without signature check.
+	proc_krb_ecdhe_client_kx, //TODO can also be proc_ecdhe_client_kx difference is credential type check
+	_gnutls_proc_cert_client_crt_vrfy, // TODO check to disable?
+	_gnutls_proc_cert_cert_req
 };
-const mod_auth_st ecdhe_kdh_rsa_auth_struct = {//TODO: finish
-	"ECDHE_KDH_RSA",
-	NULL, // don't need it
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	
+/*
+const mod_auth_st ecdhe_krb_anon_auth_struct = {
+	"ECDHE_KRB_ANON",
+	NULL, // server is anonymous, so no server cert
+	_gnutls_gen_cert_client_crt,//OK
+	gen_krb_ecdhe_server_kx, //OK //Kx without signature, no privkey available.
+	_gnutls_gen_ecdh_common_client_kx,
+	_gnutls_gen_cert_client_crt_vrfy, // TODO new function
+	_gnutls_gen_cert_server_cert_req, //OK
+
+	NULL, // server is anonymous, so no server cert processing
 	_gnutls_proc_crt,
-	_gnutls_proc_crt,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+	proc_krb_ecdhe_server_kx,//OK // Kx without signature check.
+	proc_krb_ecdhe_client_kx, //TODO can also be proc_ecdhe_client_kx difference is credential type check
+	_gnutls_proc_cert_client_crt_vrfy, // TODO check to disable?
+	_gnutls_proc_cert_cert_req
 };
-const mod_auth_st ecdhe_kdh_ecdsa_auth_struct = {//TODO: finish
-	"ECDHE_KDH_ECDSA",
-	NULL, // don't need it
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
+*/
+const mod_auth_st ecdhe_krb_rsa_auth_struct = {
+	"ECDHE_KRB_RSA",
+	_gnutls_gen_cert_server_crt,//OK
+	_gnutls_gen_cert_client_crt,//OK
+	gen_ecdhe_server_kx,//OK //Kx with signature, privkey from rsa cert.
+	_gnutls_gen_ecdh_common_client_kx,//OK
+	_gnutls_gen_cert_krb_authenticator,//OK
+	_gnutls_gen_cert_server_cert_req,//OK
 	
-	_gnutls_proc_crt,
-	_gnutls_proc_crt,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+	_gnutls_proc_crt,//OK
+	_gnutls_proc_crt,//OK
+	proc_ecdhe_server_kx,//OK
+	proc_ecdhe_client_kx,//OK
+	_gnutls_proc_cert_krb_authenticator,
+	_gnutls_proc_cert_cert_req//OK
 };
-const mod_auth_st ecdhe_kdh_dsa_auth_struct = {//TODO: finish
-	"ECDHE_KDH_DSA",
-	NULL, // don't need it
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
+
+const mod_auth_st ecdhe_krb_ecdsa_auth_struct = {//TODO: finish
+	"ECDHE_KRB_ECDSA",
+	_gnutls_gen_cert_server_crt,
+	_gnutls_gen_cert_client_crt,
+	gen_ecdhe_server_kx,
+	_gnutls_gen_ecdh_common_client_kx,
+	NULL, //TODO check that this can be disabled
+	_gnutls_gen_cert_server_cert_req,
 	
 	_gnutls_proc_crt,
 	_gnutls_proc_crt,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+	proc_ecdhe_server_kx,
+	proc_ecdhe_client_kx,
+	NULL, //TODO check that this can be disabled
+	_gnutls_proc_cert_cert_req
 };
 // end 
 
@@ -168,6 +178,12 @@ static int calc_ecdh_key(gnutls_session_t session,
 		ret =
 		    _gnutls_pk_derive(GNUTLS_PK_EC, &session->key.key,
 				      &session->key.ecdh_params, &pub);
+				/* REMARK: function _gnutls_pk_derive( algo, out, pub, priv) 
+				 * is defined as quoted, but is an alias for 
+				 * _wrap_nettle_pk_derive(algo, out, priv, pub). This makes the 
+				 * actual call here correct, but the definition of these 
+				 * functions inconsistent and confusing.
+				 */
 	} else {
 		gnutls_datum_t tmp_dh_key;
 
@@ -226,7 +242,7 @@ int _gnutls_proc_ecdh_common_client_kx(gnutls_session_t session,
 		goto cleanup;
 	}
 
-	/* generate pre-shared key */
+	/* generate the session key */
 	ret = calc_ecdh_key(session, psk_key, curve);
 	if (ret < 0) {
 		gnutls_assert();
@@ -301,7 +317,7 @@ _gnutls_gen_ecdh_common_client_kx_int(gnutls_session_t session,
 		goto cleanup;
 	}
 
-	/* generate pre-shared key */
+	/* generate the session key */
 	ret = calc_ecdh_key(session, psk_key, curve);
 	if (ret < 0) {
 		gnutls_assert();
@@ -469,6 +485,88 @@ gen_ecdhe_server_kx(gnutls_session_t session, gnutls_buffer_st * data)
 	/* Generate the signature. */
 	return _gnutls_gen_dhe_signature(session, data, data->data,
 					 data->length);
+}
+
+static int
+gen_krb_ecdhe_server_kx(gnutls_session_t session, gnutls_buffer_st * data)
+{
+	int ret;
+	//gnutls_anon_server_credentials_t cred;
+	/* we are going to allow server tickets, so this check can be
+	 * removed. At least for now.
+	cred = (gnutls_anon_server_credentials_t)
+	    _gnutls_get_cred(session, GNUTLS_CRD_ANON);
+	if (cred == NULL) {
+		gnutls_assert();
+		return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
+	}*/
+
+	/* Set auth_info. It will not be used however.
+	 * TODO: check purpose. Key material is stored directly
+	 * into session key struct. Auth info remains empty. */
+	if ((ret =
+	     _gnutls_auth_info_set(session, GNUTLS_CRD_ANON,
+				   sizeof(anon_auth_info_st), 1)) < 0) {
+		gnutls_assert();
+		return ret;
+	}
+
+	ret = _gnutls_ecdh_common_print_server_kx( session, data,
+						_gnutls_session_ecc_curve_get(session) );
+	if( ret < 0 ) 
+	{
+		gnutls_assert();
+	}
+
+	return ret;
+}
+
+
+static int
+proc_krb_ecdhe_client_kx(gnutls_session_t session, uint8_t * data,
+			 size_t _data_size)
+{
+	/* we are going to allow server tickets, so this check can be
+	 * removed. At least for now.
+	gnutls_anon_server_credentials_t cred;
+
+	cred = (gnutls_anon_server_credentials_t)
+	    _gnutls_get_cred(session, GNUTLS_CRD_ANON);
+	if (cred == NULL) {
+		gnutls_assert();
+		return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
+	}*/
+
+	return _gnutls_proc_ecdh_common_client_kx(session, data,
+						  _data_size,
+						  _gnutls_session_ecc_curve_get
+						  (session), NULL);
+}
+
+static int
+proc_krb_ecdhe_server_kx( gnutls_session_t session, uint8_t * data,
+			 size_t _data_size )
+{
+	int ret;
+
+	/* Set auth_info. It will not be used however.
+	 * TODO: check purpose. Key material is stored directly
+	 * into session key struct. Auth info remains empty. */
+	if( (ret = _gnutls_auth_info_set(session, GNUTLS_CRD_ANON,
+				   sizeof(anon_auth_info_st), 1)) < 0 )
+	{
+		gnutls_assert();
+		return ret;
+	}
+
+	ret = _gnutls_proc_ecdh_common_server_kx( session, data, _data_size );
+	if (ret < 0)
+	{
+		gnutls_assert();
+		return ret;
+	}
+
+	return 0;
 }
 
 #endif
