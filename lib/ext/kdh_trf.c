@@ -202,7 +202,7 @@ static void _gnutls_kdh_trf_deinit( extension_priv_data_t priv )
  * 
  * Since TODO
  **/ 
-int gnutls_kdh_trf_get( gnutls_session_t session, gnutls_kdh_trf_t* flags ) 
+int gnutls_kdh_trf_get( gnutls_session_t session, gnutls_kdh_trf_t flags ) 
 {	
 	int ret = 0;
 	gnutls_kdh_trf_st* trf;
@@ -230,9 +230,11 @@ int gnutls_kdh_trf_get( gnutls_session_t session, gnutls_kdh_trf_t* flags )
  * @session: is a #gnutls_session_t type.
  * @flags: the ticket request flags.
  * 
+ * TODO comment
+ * 
  * Since TODO
  **/
-int gnutls_kdh_trf_set( gnutls_session_t session, gnutls_kdh_trf_t flags ) 
+int gnutls_kdh_trf_set( gnutls_session_t session, const gnutls_kdh_trf_t flags ) 
 {	
 	int ret = 0;
 	gnutls_kdh_trf_st* trf;
@@ -248,7 +250,8 @@ int gnutls_kdh_trf_set( gnutls_session_t session, gnutls_kdh_trf_t flags )
 		return GNUTLS_E_MEMORY_ERROR;
 	}
 	
-	*trf = flags;
+	// Copy the flags
+	*trf = *flags;
 	
 	// Store the flags
 	_gnutls_ext_set_session_data( session, GNUTLS_EXTENSION_KDH_TRF, trf );

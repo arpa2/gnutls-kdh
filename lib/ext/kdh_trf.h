@@ -29,7 +29,10 @@
 
 //TODO implement: #ifdef ENABLE_KDH
 
-typedef gnutls_kdh_trf_t gnutls_kdh_trf_st;
+typedef struct gnutls_kdh_trf_st {
+	uint32_t krb_flags;
+	uint32_t tlskdh_flags;
+} gnutls_kdh_trf_st;
 
 extern extension_entry_st ext_mod_kdh_trf;
 

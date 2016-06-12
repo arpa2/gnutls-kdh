@@ -438,7 +438,7 @@ void
 	cred->verify_callback = func;
 }
 
-/**TODO
+/**
  * gnutls_authenticator_set_retrieve_function:
  * @cred: is a #gnutls_certificate_credentials_t type.
  * @func: is the callback function
@@ -450,41 +450,22 @@ void
  * The callback's function prototype is:
  * int (*callback)(gnutls_datum_t* authenticator,
  *								const gnutls_datum_t* hash,
- *								uint8_t hash_id);
+ *								int checksum_type);
  *
- * @authenticator is only used in X.509 certificates.
- * Contains a list with the CA names that the server considers trusted.
- * This is a hint and typically the client should send a certificate that is signed
- * by one of these CAs. These names, when available, are DER encoded. To get a more
- * meaningful value use the function gnutls_x509_rdn_get().
+ * @authenticator contains a pointer to an empty gnutls_datum_t type.
+ * The callback function should craft the kerberos authenticator and
+ * write it to the datum at this address.
  *
  * @hash contains the hash of the concatenation of all the handshake 
  * messages that have been interchanged up to current point in the 
  * handshake procedure. This is the same hash as for a client certificate
- * verifiy message.
+ * verifiy message. The callback function should encapsulate this hash
+ * into the kerberos authenticator in its checksum field.
  *
- * @hash_id contains the hash id from the IANA TLS HashAlgorithm Registry,
- * of the hash algorithm that is used to hash the handshake messages.
+ * @checksum_type contains the checksum id from the Kerberos Checksum 
+ * Type Numbers, of the hash algorithm that is used to hash the 
+ * handshake messages.
  *
- *
- *
- * The callback function should set the certificate list to be sent,
- * and return 0 on success. If no certificate was selected then the
- * number of certificates should be set to zero. The value (-1)
- * indicates error and the handshake will be terminated. If both certificates
- * are set in the credentials and a callback is available, the callback
- * takes precedence.
- *
- * The callback's function prototype is:
- * int (*callback)(gnutls_datum_t* authenticator,
- *								const gnutls_datum_t* hash,
- *								uint8_t hash_id);
- *
- * If the callback function is provided then gnutls will call it, in the
- * handshake, just after the certificate message has been received.
- * To verify or obtain the certificate the gnutls_certificate_verify_peers2(),
- * gnutls_certificate_type_get(), gnutls_certificate_get_peers() functions
- * can be used.
  *
  * The callback function should return 0 for the handshake to continue
  * or non-zero to terminate.
@@ -498,7 +479,42 @@ void gnutls_authenticator_set_retrieve_function(
 	cred->get_authenticator_callback = func;
 }
 
-//TODO comment
+/**
+ * gnutls_client_crt_vrfy_hash_set_retrieve_function:
+ * @cred: is a #gnutls_certificate_credentials_t type.
+ * @func: is the callback function
+ *
+ * This function sets a callback to be called in order to retrieve the
+ * hash that was encapsulated by the peer in a kerberos authenticator.
+ * This hash equals the client certificate verify hash and needs to be
+ * verified during the handshake when both parties have negotiated a 
+ * kdh-enhanced or kdh-only ciphersuite.
+ *
+ * The callback's function prototype is:
+ * int (*callback)(const gnutls_datum_t* authenticator,
+ *								gnutls_datum_t* hash,
+ *								int* checksum_type);
+ *
+ * @authenticator contains a pointer to a gnutls_datum_t type that 
+ * holds the authenticator that has been received from the peer.
+ * The callback function should decrypt this kerberos authenticator and
+ * retrieve the encapsulated hash from the checksum field.
+ *
+ * @hash contains a pointer to a pre-initialized gnutls_datum_t type
+ * which should be used by the callback function to write the retrieved
+ * hash from the authenticator to. Only the data field of the datum
+ * should be overwritten with the hash from the authenticator.
+ * 
+ * @checksum_type the checksum id from the Kerberos Checksum 
+ * Type Numbers, of the hash algorithm that is used to produce the hash 
+ * encapsulated in the authenticator should be written to this address.
+ *
+ *
+ * The callback function should return 0 for the handshake to continue
+ * or non-zero to terminate.
+ *
+ * Since: TODO
+ **/
 void gnutls_client_crt_vrfy_hash_set_retrieve_function(
 				gnutls_certificate_credentials_t cred,
 				gnutls_client_crt_vrfy_hash_retrieve_function* func)

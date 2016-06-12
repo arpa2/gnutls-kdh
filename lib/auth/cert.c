@@ -69,6 +69,11 @@ static gnutls_privkey_t alloc_and_load_pkcs11_key(gnutls_pkcs11_privkey_t
 						  key, int deinit);
 #endif
 
+//TODO implement #ifdef ENABLE_KDH
+inline static int _gnutls_TLSHashID2KrbChecksumTypeID( uint8_t hashID );
+inline static int _gnutls_KrbChecksumTypeID2TLSHashID( int ChksmTypeID );
+//TODO implement #endif
+
 #define MAX_CLIENT_SIGN_ALGOS 4
 #define CERTTYPE_SIZE (MAX_CLIENT_SIGN_ALGOS+1)
 typedef enum CertificateSigType { 
@@ -1009,7 +1014,7 @@ gen_openpgp_certificate_fpr(gnutls_session_t session, gnutls_buffer_st * data)
 }
 #endif
 
-//TODO implement #ifdef ENABLE_KRB
+//TODO implement #ifdef ENABLE_KDH
 static int
 _gnutls_gen_krb_crt(gnutls_session_t session, gnutls_buffer_st* data)
 {
@@ -1025,7 +1030,7 @@ _gnutls_gen_krb_crt(gnutls_session_t session, gnutls_buffer_st* data)
 		gnutls_assert();
 		return ret;
 	}
-
+	//TODO comment for server ticket case...
 	// We should have exactly one certificate containing our ticket.
 	if( apr_cert_list_length == 1 )
 	{
@@ -1106,6 +1111,8 @@ _gnutls_gen_cert_server_crt(gnutls_session_t session, gnutls_buffer_st * data)
 #endif
 	case GNUTLS_CRT_X509:
 		return gen_x509_crt(session, data);
+	case GNUTLS_CRT_KRB:
+		return _gnutls_gen_krb_crt(session, data);
 	default:
 		gnutls_assert();
 		return GNUTLS_E_INTERNAL_ERROR;
@@ -1525,11 +1532,23 @@ static int _gnutls_proc_krb_crt(gnutls_session_t session,
 	cert_size = _gnutls_read_uint24( p );
 	p += 3;
 
+	/* In case we are a server we require the client to send a
+	 * certificate containing a ticket. Servers however, are not obliged
+	 * to send a ticket. */
 	if( cert_size == 0 )
 	{
-		// No certificate was sent
-		gnutls_assert();
-		return GNUTLS_E_NO_CERTIFICATE_FOUND;
+		if( _gnutls_server_mode( session ) )
+		{
+			// No certificate was sent by the client. This is not OK.
+			gnutls_assert();
+			return GNUTLS_E_NO_CERTIFICATE_FOUND;
+		} else
+		{
+			/* No certificate was sent by the server. This is OK. We return
+			 * here and do not have to parse and store any certificate.
+			 */
+			return 0;
+		}
 	}
 
 	// Check the rest of our packet length
@@ -2578,6 +2597,7 @@ _gnutls_proc_dhe_signature(gnutls_session_t session, uint8_t * data,
 
 
 //TODO maybe put in different file
+//TODO implement #ifdef ENABLE_KDH
 
 int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session, 
 																				gnutls_buffer_st* data )
@@ -2587,12 +2607,14 @@ int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session,
 	gnutls_privkey_t apr_pkey;
 	int apr_cert_list_length;
 	gnutls_sign_algorithm_t sh_algo; // sign & hash algoritm
-	const mac_entry_st *me;
-	const sign_algorithm_st *aid;
+	const mac_entry_st* me;
+	const sign_algorithm_st* aid;
 	uint8_t hash[MAX_HASH_SIZE];
+	uint8_t tmp[2]; // to store our sign & hash algo IDs
 	gnutls_datum_t dhash;
 	gnutls_datum_t authenticator;
 	gnutls_certificate_credentials_t cred;
+	int krb_checksum_type;
 	
 	
 	// Check whether there are credentials set
@@ -2647,14 +2669,24 @@ int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session,
 		/* Convert the internal representation of the signature & hash 
 		 * algorithm to a tuple containing the signature and hash 
 		 * identifiers from the IANA TLS SignatureAlgorithm and 
-		 * HashAlgorithm Registries. We need the value for the hash
-		 * algorithm to be passed on to the callback function in order to
-		 * ID the hash that has been used.
+		 * HashAlgorithm Registries. We prepend this tuple to the
+		 * authenticator in order to comply with the DigitallySigned struct
+		 * format. We also need the hash ID to convert it to the
+		 * equivalent kerberos checksum type identifier.
 		 */
 		aid = _gnutls_sign_to_tls_aid( sh_algo );
 		if( aid == NULL )
 			return gnutls_assert_val( GNUTLS_E_UNKNOWN_ALGORITHM );
-		
+			
+		// Write our signature & hash algorithm IDs to the buffer
+		tmp[0] = aid->hash_algorithm;
+		tmp[1] = aid->sign_algorithm;
+		ret = _gnutls_buffer_append_data( data, tmp, 2 );
+		if( ret < 0 )
+		{
+			gnutls_assert();
+		}
+
 		/* First we are going to hash all the handshake messages passed
 		 * back and forth thusfar, just as for the regular client
 		 * certificate verifiy message. However, we are not going to sign
@@ -2668,9 +2700,12 @@ int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session,
 											hash );
 		if( ret < 0 )	return gnutls_assert_val(ret);
 
-		// Store our hash as a datum_t type to easy handling
+		// Store our hash as a datum_t type to ease handling
 		dhash.data = hash;
 		dhash.size = _gnutls_hash_get_algo_len( me );
+		
+		// Convert TLS hash ID to Kerberos checksum type ID
+		krb_checksum_type = _gnutls_TLSHashID2KrbChecksumTypeID( aid->hash_algorithm );
 		
 		/* We are now going to pass this hash to a callback function that
 		 * wraps it into a kerberos authenticator.
@@ -2679,7 +2714,7 @@ int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session,
 		{
 			ret = cred->get_authenticator_callback( &authenticator,
 																							&dhash,
-																							aid->hash_algorithm );
+																							krb_checksum_type );
 			if( ret < 0 ) return gnutls_assert_val( GNUTLS_E_USER_ERROR );			
 		} 
 		else
@@ -2689,11 +2724,11 @@ int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session,
 			 */
 			return gnutls_assert_val( GNUTLS_E_USER_ERROR );
 		}
-		 
-		/* Now that we have the authenticator we are going to serialize it
+		
+		 /* Now that we have the authenticator we are going to serialize it
 		 * into the output buffer so that it can be transmitted to the 
 		 * peer.
-		 */ 
+		 */
 		ret = _gnutls_buffer_append_data_prefix( data, 16, 
 																						authenticator.data,
 																						authenticator.size );
@@ -2726,72 +2761,230 @@ int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session,
 int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
 				  uint8_t* data, size_t data_size )
 {
-	int size, ret;
-	ssize_t dsize = data_size;
-	uint8_t *pdata = data;
-	gnutls_datum_t sig;
-	cert_auth_info_t info = _gnutls_get_auth_info(session, GNUTLS_CRD_CERTIFICATE);
-	gnutls_pcert_st peer_cert;
-	gnutls_sign_algorithm_t sign_algo = GNUTLS_SIGN_UNKNOWN;
-	const version_entry_st *ver = get_version(session);
-	gnutls_certificate_type_t cert_type;
+	int ret;
+	int krb_checksum_type;
+	gnutls_datum_t dhash; // Computed hash in datum format
+	gnutls_datum_t auth_hash; // Hash from the authenticator
+	gnutls_datum_t authenticator;	
+	unsigned int auth_len; // Length in bytes of the authenticator	
+	gnutls_certificate_credentials_t cred;
+	gnutls_sign_algorithm_t sh_algo;
+	sign_algorithm_st aid;	
+	const mac_entry_st* me;
+	uint8_t hash[MAX_HASH_SIZE]; // Computed hash
+	uint8_t auth_hash_id; // TLS ID converted from checksum type ID in authenticator
 	
-	//1) authenticator inlezen en beschikbaar maken voor applicatie
+	ssize_t dsize  = data_size;
+	uint8_t* pdata = data; // Data pointer
 	
 	
-
-	if (unlikely(info == NULL || info->ncerts == 0 || ver == NULL)) {
+	// Check whether there are credentials set
+	cred = (gnutls_certificate_credentials_t)
+	    _gnutls_get_cred( session, GNUTLS_CRD_CERTIFICATE );
+	if( cred == NULL )
+	{
 		gnutls_assert();
-		/* we need this in order to get peer's certificate */
-		return GNUTLS_E_INTERNAL_ERROR;
+		return GNUTLS_E_INSUFFICIENT_CREDENTIALS;
 	}
+	
+	/* First we are going to read our authenticator from the buffer
+	 * which is formatted according to the DigitallySigned struct. We
+	 * therefor first read the signature and hash algorithm tuple and 
+	 * then read the authenticator.
+	 */	
+	// Read the received signature & hash algorithm
+	DECR_LEN( dsize, 2 );
+	aid.hash_algorithm = pdata[0];
+	aid.sign_algorithm = pdata[1];
 
-	if (_gnutls_version_has_selectable_sighash(ver)) {
-		sign_algorithm_st aid;
-
-		DECR_LEN(dsize, 2);
-		aid.hash_algorithm = pdata[0];
-		aid.sign_algorithm = pdata[1];
-
-		sign_algo = _gnutls_tls_aid_to_sign(&aid);
-		if (sign_algo == GNUTLS_SIGN_UNKNOWN) {
-			gnutls_assert();
-			return GNUTLS_E_UNSUPPORTED_SIGNATURE_ALGORITHM;
-		}
-		pdata += 2;
+	sh_algo = _gnutls_tls_aid_to_sign( &aid );
+	if( sh_algo == GNUTLS_SIGN_UNKNOWN )
+	{
+		gnutls_assert();
+		return GNUTLS_E_UNSUPPORTED_SIGNATURE_ALGORITHM;
 	}
-
-	ret = _gnutls_session_sign_algo_enabled(session, sign_algo);
-	if (ret < 0)
-		return gnutls_assert_val(GNUTLS_E_UNSUPPORTED_SIGNATURE_ALGORITHM);
-
-	DECR_LEN(dsize, 2);
-	size = _gnutls_read_uint16(pdata);
 	pdata += 2;
-
-	DECR_LEN_FINAL(dsize, size);
-
-	sig.data = pdata;
-	sig.size = size;
-
-	// Retrieve the negotiated certificate type
-	cert_type = gnutls_certificate_type_get2( session, GNUTLS_CTYPE_CLIENT );
-
-	ret = _gnutls_get_auth_info_pcert(&peer_cert, cert_type, info);
-
-	if (ret < 0) {
-		gnutls_assert();
-		return ret;
+	
+	// Check whether it is allowed
+	ret = _gnutls_session_sign_algo_enabled( session, sh_algo );
+	if( ret < 0 )
+	{
+		return gnutls_assert_val( ret );
 	}
+		
+	// Set the signature & hash algorithm
+	gnutls_sign_algorithm_set_client( session, sh_algo );
+	gnutls_sign_algorithm_set_server( session, sh_algo );
+	
+	// Log the used algorithm
+	_gnutls_handshake_log("HSK[%p]: verify cert vrfy: using %s\n",
+			      session,
+			      gnutls_sign_algorithm_get_name( sh_algo ));
 
-	if ((ret =
-	     _gnutls_handshake_verify_crt_vrfy(session, &peer_cert, &sig,
-					       sign_algo)) < 0) {
-		gnutls_assert();
-		gnutls_pcert_deinit(&peer_cert);
-		return ret;
+	/* Read the length of our authenticator. The length prefix itself
+	 * has a length of 3 bytes.
+	 */
+	DECR_LEN( dsize, 3 );
+	auth_len = _gnutls_read_uint24( pdata );
+	pdata += 3;
+
+	// Read our authenticator
+	DECR_LEN_FINAL( dsize, auth_len );
+
+	authenticator.data = pdata;
+	authenticator.size = auth_len;
+	
+	/* All data has been received in good order. We are now going to
+	 * prepare our data structure that stores the hash. We know how to
+	 * initialize this structure because the hash algorithm used for the
+	 * hash that is packed inside the authenticator is passed along.
+	 */
+	// First retrieve the right MAC entry that holds the size of our hash
+	me = hash_to_entry( gnutls_sign_get_hash_algorithm( sh_algo ) );
+	
+	// Set the size of our hash
+	auth_hash.size = me->output_size;
+	
+	// Allocate some memory to hold our hash
+	auth_hash.data = gnutls_malloc( me->output_size );
+	
+	/* Because the authenticator is encrypted with a kerberos key we 
+	 * can not retrieve the client certificate verify hash ourselves.
+	 * We therefor do a callback in order to retrieve the hash.
+	 */
+	// Check whether a callback has been defined
+	if( cred->get_client_crt_vrfy_hash_callback )
+	{
+		ret = cred->get_client_crt_vrfy_hash_callback( &authenticator,
+															&auth_hash,	&krb_checksum_type );
+		if( ret < 0 ) return gnutls_assert_val( GNUTLS_E_USER_ERROR );
+	} else
+	{
+		/* No callback was set in order to retrieve the hash
+		 * so we can't continue the handshake.
+		 */
+		return gnutls_assert_val( GNUTLS_E_USER_ERROR ); 
 	}
-	gnutls_pcert_deinit(&peer_cert);
+	
+	/* By now we have all the data to start the validation. First we
+	 * check whether the checksum type and the hash type match.
+	 */
+	auth_hash_id = _gnutls_KrbChecksumTypeID2TLSHashID( krb_checksum_type );
+	if( aid.hash_algorithm != auth_hash_id )
+	{
+		gnutls_assert_val( GNUTLS_E_RECEIVED_ILLEGAL_PARAMETER );
+	}
+	
+	/* Then we check whether the hash from the authenticator matches the 
+	 * one that we compute ourselves.
+	 */
+	// Hash all the handshake messages passed back and forth thusfar
+	ret = _gnutls_hash_fast( (gnutls_digest_algorithm_t)me->id,
+			      session->internals.handshake_hash_buffer.data,
+			      session->internals.handshake_hash_buffer_prev_len, hash );
+	if( ret < 0 ) return gnutls_assert_val( ret );
 
+	// Store our hash as a datum_t type to ease handling
+	dhash.data = hash;
+	dhash.size = _gnutls_hash_get_algo_len( me );
+	
+	// Compare the hash sizes
+	if( dhash.size != auth_hash.size )
+	{
+		return gnutls_assert_val( GNUTLS_E_PK_SIG_VERIFY_FAILED );
+	}
+	
+	// Sizes match, now compare the hashes
+	if( memcmp( dhash.data, auth_hash.data, dhash.size ) )
+	{
+		return gnutls_assert_val( GNUTLS_E_PK_SIG_VERIFY_FAILED );
+	}
+	
+	// Log the OK status
+	_gnutls_handshake_log("HSK[%p]: client cert vrfy: hash is OK.\n",
+			      session );
+			      
+	// Cleanup
+	_gnutls_free_datum( &auth_hash );
+			     
+	// All OK 
 	return 0;
 }
+
+/* Converts IDs from IANA's TLS HashAlgorithm Registry 
+ * to IDs from IANA's Kerberos Checksum Type Numbers.
+ * A 0 value means that there is no mapping.
+ */
+inline static int _gnutls_TLSHashID2KrbChecksumTypeID( uint8_t hashID )
+{
+	const uint8_t MAPPING_LEN = 7;
+	const int TLS_KRB_Mapping[] = { //Assume continuous defined values
+		0, // none
+		0, // md5
+		10, // sha1
+		-1, // sha224
+		-2, // sha256
+		-3, // sha384
+		-4  // sha512
+	};
+	
+	if( hashID < MAPPING_LEN ) 
+	{
+		return TLS_KRB_Mapping[ hashID ];
+	} else
+	{
+		return GNUTLS_E_ILLEGAL_PARAMETER;
+	}
+}
+
+/* Converts IDs from IANA's Kerberos Checksum Type Numbers 
+ * to IDs from IANA's TLS HashAlgorithm Registry.
+ * A 0 value means that there is no mapping.
+ */
+inline static int _gnutls_KrbChecksumTypeID2TLSHashID( int ChksmTypeID )
+{
+	const int MAPPING_MAX_ID = 18;
+	const uint8_t KRB_TLS_Mapping[] = { //Assume continuous defined values
+		0, // Reserved
+		0, // CRC32
+		0, // rsa-md4
+		0, // rsa-md4-des
+		0, // des-mac
+		0, // des-mac-k
+		0, // rsa-md4-des-k
+		0, // rsa-md5
+		0, // rsa-md5-des
+		0, // rsa-md5-des3
+		2, // sha1
+		0, // Unassigned
+		0, // hmac-sha1-des3-kd
+		0, // hmac-sha1-des3
+		2, // sha1
+		0, // hmac-sha1-96-aes128
+		0, // hmac-sha1-96-aes256
+		0, // cmac-camellia128
+		0, // cmac-camellia256
+		//--- negative values, i.e. private values
+		3, // (-1) sha224
+		4, // (-2) sha256
+		5, // (-3) sha384
+		6 // (-4) sha512
+	};
+	
+	if( ChksmTypeID <= MAPPING_MAX_ID ) 
+	{
+		/* Negative values are allowed and are reserved for private use.
+		 * Let's convert them to positive values in order to be able to use
+		 * our array for the mapping. */
+		if( ChksmTypeID < 0 )
+		{
+			ChksmTypeID = MAPPING_MAX_ID - ChksmTypeID;
+		}
+		
+		return KRB_TLS_Mapping[ ChksmTypeID ];
+	} else
+	{
+		return GNUTLS_E_ILLEGAL_PARAMETER;
+	}
+}
+//TODO implement #endif

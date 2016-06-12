@@ -536,18 +536,18 @@ gnutls_pubkey_print(gnutls_pubkey_t pubkey,
 typedef int gnutls_authenticator_retrieve_function(
 				gnutls_datum_t* authenticator,
 				const gnutls_datum_t* hash,
-				uint8_t hash_id);
+				int checksum_type);
 
 void gnutls_authenticator_set_retrieve_function(
 				gnutls_certificate_credentials_t cred,
 				gnutls_authenticator_retrieve_function* func);
 
 /* Callback prototype for retrieval of a client certificate
- * verify hash that is packed inside an authenticator */				
+ * verify hash that is packed inside an authenticator */
 typedef int gnutls_client_crt_vrfy_hash_retrieve_function(
 				const gnutls_datum_t* authenticator,
 				gnutls_datum_t* hash,
-				uint8_t* hash_id);
+				int* checksum_type);
 
 void gnutls_client_crt_vrfy_hash_set_retrieve_function(
 				gnutls_certificate_credentials_t cred,
