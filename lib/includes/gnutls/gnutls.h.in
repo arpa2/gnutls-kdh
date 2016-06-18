@@ -629,20 +629,6 @@ typedef enum {
 	GNUTLS_X509_FMT_PEM = 1
 } gnutls_x509_crt_fmt_t;
 
-// ARPA2 added by TomV for TLS-KDH:
-/**
- * gnutls_krb_crt_fmt_t:
- * @GNUTLS_KRB_FMT_DER: TODO (binary).
- * @GNUTLS_KRB_FMT_PEM: TODO (text).
- *
- * Enumeration of different certificate encoding formats.
- */
-typedef enum {
-	GNUTLS_KRB_FMT_DER = 0,
-	GNUTLS_KRB_FMT_PEM = 1
-} gnutls_krb_crt_fmt_t;
-// end
-
 /**
  * gnutls_certificate_print_formats_t:
  * @GNUTLS_CRT_PRINT_FULL: Full information about certificate.
@@ -680,7 +666,7 @@ typedef enum {
 	GNUTLS_PK_DH = 3,
 	GNUTLS_PK_EC = 4,
 	// ARPA2 added by TomV for TLS-KDH: 
-	GNUTLS_PK_KDH = 5 //TODO remove?
+	GNUTLS_PK_KDH = 5
 	// end
 } gnutls_pk_algorithm_t;
 

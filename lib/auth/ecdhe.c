@@ -41,6 +41,7 @@
 #include <auth/psk.h>
 #include <auth/cert.h>
 #include <gnutls_pk.h>
+#include <auth/kdh.h>
 
 #include "auth/anon.h"
 
@@ -96,18 +97,18 @@ const mod_auth_st ecdhe_rsa_auth_struct = {
 const mod_auth_st ecdhe_krb_auth_struct = {
 	"ECDHE_KRB",
 	_gnutls_gen_cert_server_crt, // servers can also send a ticket
-	_gnutls_gen_cert_client_crt,//OK
-	gen_krb_ecdhe_server_kx, //OK //Kx without signature, no privkey available.
-	_gnutls_gen_ecdh_common_client_kx, //OK
-	_gnutls_gen_cert_krb_authenticator, //OK
-	_gnutls_gen_cert_server_cert_req, //OK
+	_gnutls_gen_cert_client_crt,
+	gen_krb_ecdhe_server_kx, //Kx without signature, no privkey available.
+	_gnutls_gen_ecdh_common_client_kx,
+	_gnutls_gen_cert_krb_authenticator,
+	_gnutls_gen_cert_server_cert_req,
 
 	_gnutls_proc_crt, // servers can also send a ticket
-	_gnutls_proc_crt, //OK
-	proc_krb_ecdhe_server_kx,//OK // Kx without signature check.
-	proc_krb_ecdhe_client_kx, //TODO can also be proc_ecdhe_client_kx difference is credential type check
-	_gnutls_proc_cert_krb_authenticator, //OK
-	_gnutls_proc_cert_cert_req //OK
+	_gnutls_proc_crt,
+	proc_krb_ecdhe_server_kx,// Kx without signature check.
+	proc_krb_ecdhe_client_kx,
+	_gnutls_proc_cert_krb_authenticator,
+	_gnutls_proc_cert_cert_req
 };
 /*
 const mod_auth_st ecdhe_krb_anon_auth_struct = {
@@ -126,40 +127,40 @@ const mod_auth_st ecdhe_krb_anon_auth_struct = {
 	_gnutls_proc_cert_client_crt_vrfy, // TODO check to disable?
 	_gnutls_proc_cert_cert_req
 };
-*/
+
 const mod_auth_st ecdhe_krb_rsa_auth_struct = {
 	"ECDHE_KRB_RSA",
-	_gnutls_gen_cert_server_crt,//OK
-	_gnutls_gen_cert_client_crt,//OK
-	gen_ecdhe_server_kx,//OK //Kx with signature
-	_gnutls_gen_ecdh_common_client_kx,//OK
-	_gnutls_gen_cert_krb_authenticator,//OK
-	_gnutls_gen_cert_server_cert_req,//OK
+	_gnutls_gen_cert_server_crt,
+	_gnutls_gen_cert_client_crt,
+	gen_ecdhe_server_kx, //Kx with signature
+	_gnutls_gen_ecdh_common_client_kx,
+	_gnutls_gen_cert_krb_authenticator,
+	_gnutls_gen_cert_server_cert_req,
 	
-	_gnutls_proc_crt,//OK
-	_gnutls_proc_crt,//OK
-	proc_ecdhe_server_kx,//OK
-	proc_ecdhe_client_kx,//OK
-	_gnutls_proc_cert_krb_authenticator,//OK
-	_gnutls_proc_cert_cert_req//OK
+	_gnutls_proc_crt,
+	_gnutls_proc_crt,
+	proc_ecdhe_server_kx,
+	proc_ecdhe_client_kx,
+	_gnutls_proc_cert_krb_authenticator,
+	_gnutls_proc_cert_cert_req
 };
 
 const mod_auth_st ecdhe_krb_ecdsa_auth_struct = {
 	"ECDHE_KRB_ECDSA",
-	_gnutls_gen_cert_server_crt,//OK
-	_gnutls_gen_cert_client_crt,//OK
-	gen_ecdhe_server_kx,//OK //Kx with signature
-	_gnutls_gen_ecdh_common_client_kx,//OK
-	_gnutls_gen_cert_krb_authenticator,//OK
-	_gnutls_gen_cert_server_cert_req,//OK
+	_gnutls_gen_cert_server_crt,
+	_gnutls_gen_cert_client_crt,
+	gen_ecdhe_server_kx, //Kx with signature
+	_gnutls_gen_ecdh_common_client_kx,
+	_gnutls_gen_cert_krb_authenticator,
+	_gnutls_gen_cert_server_cert_req,
 	
-	_gnutls_proc_crt,//OK
-	_gnutls_proc_crt,//OK
-	proc_ecdhe_server_kx,//OK
-	proc_ecdhe_client_kx,//OK
-	_gnutls_proc_cert_krb_authenticator,//OK
-	_gnutls_proc_cert_cert_req//OK
-};
+	_gnutls_proc_crt,
+	_gnutls_proc_crt,
+	proc_ecdhe_server_kx,
+	proc_ecdhe_client_kx,
+	_gnutls_proc_cert_krb_authenticator,
+	_gnutls_proc_cert_cert_req
+};*/
 // end 
 
 static int calc_ecdh_key(gnutls_session_t session,
@@ -242,7 +243,7 @@ int _gnutls_proc_ecdh_common_client_kx(gnutls_session_t session,
 		goto cleanup;
 	}
 
-	/* generate the session key */
+	/* generate the DH key */
 	ret = calc_ecdh_key(session, psk_key, curve);
 	if (ret < 0) {
 		gnutls_assert();
@@ -317,7 +318,7 @@ _gnutls_gen_ecdh_common_client_kx_int(gnutls_session_t session,
 		goto cleanup;
 	}
 
-	/* generate the session key */
+	/* generate the DH key */
 	ret = calc_ecdh_key(session, psk_key, curve);
 	if (ret < 0) {
 		gnutls_assert();

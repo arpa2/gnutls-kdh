@@ -181,8 +181,8 @@ static const int _kx_priority_performance[] = {
 	GNUTLS_KX_ECDHE_RSA,
 	// ARPA2 added by TomV & RickvR for TLS-KDH: 
 	GNUTLS_KX_ECDHE_KRB,
-	GNUTLS_KX_ECDHE_KRB_RSA,
-	GNUTLS_KX_ECDHE_KRB_ECDSA,
+	//GNUTLS_KX_ECDHE_KRB_RSA,
+	//GNUTLS_KX_ECDHE_KRB_ECDSA,
 	// end
 #endif
 #ifdef ENABLE_DHE
@@ -198,8 +198,8 @@ static const int _kx_priority_pfs[] = {
 	GNUTLS_KX_ECDHE_RSA,
 	// ARPA2 added by TomV for TLS-KDH: 
 	GNUTLS_KX_ECDHE_KRB,
-	GNUTLS_KX_ECDHE_KRB_ECDSA,
-	GNUTLS_KX_ECDHE_KRB_RSA,
+	//GNUTLS_KX_ECDHE_KRB_ECDSA,
+	//GNUTLS_KX_ECDHE_KRB_RSA,
 	// end
 #endif
 #ifdef ENABLE_DHE
@@ -224,8 +224,8 @@ static const int _kx_priority_secure[] = {
 	GNUTLS_KX_ECDHE_RSA,
 	// ARPA2 added by TomV & RickvR for TLS-KDH: 
 	GNUTLS_KX_ECDHE_KRB,
-	GNUTLS_KX_ECDHE_KRB_ECDSA,
-	GNUTLS_KX_ECDHE_KRB_RSA,
+	//GNUTLS_KX_ECDHE_KRB_ECDSA,
+	//GNUTLS_KX_ECDHE_KRB_RSA,
 	// end
 #endif
 	GNUTLS_KX_RSA,
@@ -869,7 +869,6 @@ static void enable_asym_cert_types(gnutls_priority_t c)
 }
 // end
 
-//TODO make sure that asym ctype flags can be set via prior strings
 
 #include <priority_options.h>
 

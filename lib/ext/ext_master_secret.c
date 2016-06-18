@@ -20,7 +20,7 @@
  *
  */
 
-/* This file contains the code for the Max Record Size TLS extension.
+/* This file contains the code for the Extended Master Secret TLS extension.
  */
 
 #include "gnutls_int.h"

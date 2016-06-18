@@ -79,10 +79,10 @@ typedef struct gnutls_certificate_credentials_st {
 
 	gnutls_certificate_verify_function *verify_callback;
 
-//TODO implement #ifdef ENABLE_KRB
+//TODO implement #ifdef ENABLE_KDH
 	/* KDH specific stuff */
-	gnutls_authenticator_retrieve_function *get_authenticator_callback;
-	gnutls_client_crt_vrfy_hash_retrieve_function *get_client_crt_vrfy_hash_callback;
+	gnutls_client_authenticator_retrieve_function *get_client_authenticator_callback;
+	gnutls_server_authenticator_retrieve_function *get_server_authenticator_callback;
 //TODO implement #endif
 
 	struct pin_info_st pin;

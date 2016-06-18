@@ -452,9 +452,15 @@ void
  *								const gnutls_datum_t* hash,
  *								int checksum_type);
  *
- * @authenticator contains a pointer to an empty gnutls_datum_t type.
- * The callback function should craft the kerberos authenticator and
- * write it to the datum at this address.
+ * @enc_authenticator contains a pointer to an empty gnutls_datum_t type.
+ * The callback function should craft an encrypted kerberos authenticator 
+ * from the client and write it to the datum at this address.
+ * 
+ * @dec_authenticator contains a pointer to an empty gnutls_datum_t type.
+ * The callback function should write the unencrypted kerberos
+ * authenticator that corresponds with @enc_authenticator to the datum
+ * at this address. This unencrypted authenticator is used as input for
+ * the premaster secret computation.
  *
  * @hash contains the hash of the concatenation of all the handshake 
  * messages that have been interchanged up to current point in the 
@@ -472,11 +478,11 @@ void
  *
  * Since: TODO
  **/
-void gnutls_authenticator_set_retrieve_function(
+void gnutls_client_authenticator_set_retrieve_function(
 		gnutls_certificate_credentials_t cred,
-    gnutls_authenticator_retrieve_function * func)
+    gnutls_client_authenticator_retrieve_function * func)
 {
-	cred->get_authenticator_callback = func;
+	cred->get_client_authenticator_callback = func;
 }
 
 /**
@@ -495,10 +501,16 @@ void gnutls_authenticator_set_retrieve_function(
  *								gnutls_datum_t* hash,
  *								int* checksum_type);
  *
- * @authenticator contains a pointer to a gnutls_datum_t type that 
- * holds the authenticator that has been received from the peer.
- * The callback function should decrypt this kerberos authenticator and
- * retrieve the encapsulated hash from the checksum field.
+ * @enc_authenticator contains a pointer to a gnutls_datum_t type that 
+ * holds the encrypted authenticator that has been received from the 
+ * peer. The callback function should decrypt this kerberos 
+ * authenticator and retrieve the encapsulated hash from the checksum 
+ * field.
+ * 
+ * @dec_authenticator contains a pointer to a pre-initialized 
+ * gnutls_datum_t type which should be used by the callback function to 
+ * write the decrypted authenticator to. This decrypted authenticator
+ * serves as input for the premaster secret computation.
  *
  * @hash contains a pointer to a pre-initialized gnutls_datum_t type
  * which should be used by the callback function to write the retrieved
@@ -515,11 +527,11 @@ void gnutls_authenticator_set_retrieve_function(
  *
  * Since: TODO
  **/
-void gnutls_client_crt_vrfy_hash_set_retrieve_function(
+void gnutls_server_authenticator_set_retrieve_function(
 				gnutls_certificate_credentials_t cred,
-				gnutls_client_crt_vrfy_hash_retrieve_function* func)
+				gnutls_server_authenticator_retrieve_function* func)
 {
-	cred->get_client_crt_vrfy_hash_callback = func;
+	cred->get_server_authenticator_callback = func;
 }
 
 /*-

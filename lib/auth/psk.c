@@ -65,7 +65,7 @@ _gnutls_set_psk_session_key(gnutls_session_t session,
 			    gnutls_datum_t * ppsk /* key */ ,
 			    gnutls_datum_t * dh_secret)
 {
-	gnutls_datum_t pwd_psk = { NULL, 0 };
+	gnutls_datum_t pwd_psk = { NULL, 0 }; //REMARK: why is this here? It is not used.
 	size_t dh_secret_size;
 	uint8_t *p;
 	int ret;

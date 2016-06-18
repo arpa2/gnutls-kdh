@@ -387,14 +387,14 @@ struct gnutls_key_st {
 	bigint_t ecdh_x; // public part
 	bigint_t ecdh_y; // public part
 
-	/* For DH KX */
+	/* Premaster secret */
 	gnutls_datum_t key;
 	
 	/* For DH KX */
 	gnutls_pk_params_st dh_params;
 	bigint_t client_Y;
-	/* for SRP */
-
+	
+	/* For SRP */
 	bigint_t srp_key;
 	bigint_t srp_g;
 	bigint_t srp_p;
@@ -404,6 +404,7 @@ struct gnutls_key_st {
 	bigint_t b;
 	bigint_t a;
 	bigint_t x;
+	
 	/* RSA: e, m
 	 */
 	bigint_t rsa[2];

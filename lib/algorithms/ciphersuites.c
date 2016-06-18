@@ -350,6 +350,7 @@
 //#define GNUTLS_ECDHE_KDH_ARIA_256_GCM_SHA384 {0xFF, 0xA9} TODO uncomment when ARIA is implemented
 #define GNUTLS_ECDHE_KDH_CAMELLIA_128_GCM_SHA256 {0xFF, 0xAA}
 #define GNUTLS_ECDHE_KDH_CAMELLIA_256_GCM_SHA384 {0xFF, 0xAB}
+#define GNUTLS_ECDHE_KDH_CAMELLIA_256_GCM_SHA512 {0xFF, 0xAC}
 //TODO add combo's
 /* end */
 
@@ -1303,6 +1304,14 @@ static const gnutls_cipher_suite_entry_st cs_algorithms[] = {
 				GNUTLS_DTLS1_2,
 				GNUTLS_MAC_SHA384,
 				48),
+	ENTRY_PRF(GNUTLS_ECDHE_KDH_CAMELLIA_256_GCM_SHA512,
+				GNUTLS_CIPHER_CAMELLIA_256_GCM,
+				GNUTLS_KX_ECDHE_KRB,
+				GNUTLS_MAC_SHA512,
+				GNUTLS_TLS1_2,
+				GNUTLS_DTLS1_2,
+				GNUTLS_MAC_SHA512,
+				64),
 //TODO: Add: #endif
 /* end */
 
@@ -1863,4 +1872,32 @@ gnutls_priority_get_cipher_suite_index(gnutls_priority_t pcache,
 		}
 	}
 	return GNUTLS_E_UNKNOWN_CIPHER_SUITE;
+}
+
+int _gnutls_cipher_suite_is_kdh( const uint8_t suite[2] )
+{//TODO test
+	unsigned i;
+	const int NUM_SUITES = 10;
+	const uint8_t KDH_suites[] = {
+		GNUTLS_ECDHE_KDH_AES_128_CCM,
+		GNUTLS_ECDHE_KDH_AES_128_CCM_8,
+		GNUTLS_ECDHE_KDH_AES_128_GCM_SHA256,
+		GNUTLS_ECDHE_KDH_AES_256_CCM,
+		GNUTLS_ECDHE_KDH_AES_256_CCM_8,
+		GNUTLS_ECDHE_KDH_AES_256_GCM_SHA384,
+		GNUTLS_ECDHE_KDH_AES_256_GCM_SHA512,
+		GNUTLS_ECDHE_KDH_CAMELLIA_128_GCM_SHA256,
+		GNUTLS_ECDHE_KDH_CAMELLIA_256_GCM_SHA384,
+		GNUTLS_ECDHE_KDH_CAMELLIA_256_GCM_SHA512
+	};
+	
+	for( i = 0; i < NUM_SUITES; i++ )
+	{
+		if( KDH_suites[i] == suite )
+		{
+			return 1;
+		}
+	}
+	
+	return 0;
 }

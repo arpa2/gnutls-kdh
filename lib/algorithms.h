@@ -183,6 +183,10 @@ _gnutls_cipher_suite_get_id(gnutls_kx_algorithm_t kx_algorithm,
 
 const gnutls_cipher_suite_entry_st *ciphersuite_to_entry(const uint8_t suite[2]);
 
+uint16_t _gnutls_cipher_suite_get_verify_data_len(const uint8_t suite[2]);
+
+int _gnutls_cipher_suite_is_kdh( const uint8_t suite[2] );
+
 /* Functions for ciphers. */
 const cipher_entry_st *cipher_to_entry(gnutls_cipher_algorithm_t c);
 const cipher_entry_st *cipher_name_to_entry(const char *name);
@@ -335,8 +339,7 @@ static inline int _gnutls_kx_is_ecc(gnutls_kx_algorithm_t kx)
 {
 	if (kx == GNUTLS_KX_ECDHE_RSA || kx == GNUTLS_KX_ECDHE_ECDSA ||
 	    kx == GNUTLS_KX_ANON_ECDH || kx == GNUTLS_KX_ECDHE_PSK ||
-	    kx == GNUTLS_KX_ECDHE_KRB || kx == GNUTLS_KX_ECDHE_KRB_RSA ||
-	    kx == GNUTLS_KX_ECDHE_KRB_ECDSA) // ARPA2 added by TomV for TLS-KDH
+	    kx == GNUTLS_KX_ECDHE_KRB) // ARPA2 added by TomV for TLS-KDH
 		return 1;
 
 	return 0;

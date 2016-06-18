@@ -71,6 +71,7 @@ _gnutls_get_public_rsa_params(gnutls_session_t session,
 	int ret;
 	cert_auth_info_t info;
 	gnutls_pcert_st peer_cert;
+	gnutls_certificate_type_t cert_type;
 
 	/* normal non export case */
 
@@ -81,10 +82,22 @@ _gnutls_get_public_rsa_params(gnutls_session_t session,
 		return GNUTLS_E_INTERNAL_ERROR;
 	}
 
-	ret =
-	    _gnutls_get_auth_info_pcert(&peer_cert,
-					session->security_parameters.
-					cert_type, info);
+	/* IMPORTANT:
+	 * Currently this function gets only called on the client side
+	 * during generation of the client kx msg. This function
+	 * retrieves the RSA params from the peer's cerificate. That is in
+	 * this case the server's certificate. As of GNUTLS version TODO it is
+	 * possible to negotiate different certificate types for client and
+	 * server. Therefor the correct cert type needs to be retrieved here
+	 * for the subsequent _gnutls_get_auth_info_pcert call. If this
+	 * function is to be called on the server side in the future, extra
+	 * checks need to be build here in order to retrieve te correct 
+	 * certificate type.
+	 */
+	// Get the negotiated server certificate type 
+	cert_type = gnutls_certificate_type_get2( session, GNUTLS_CTYPE_SERVER );
+	
+	ret = _gnutls_get_auth_info_pcert(&peer_cert, cert_type, info);
 
 	if (ret < 0) {
 		gnutls_assert();
