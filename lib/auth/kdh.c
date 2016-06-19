@@ -21,6 +21,11 @@
  */
 
 #include <auth/kdh.h>
+#include "gnutls_errors.h"
+#include "gnutls_int.h"
+#include <cert.h>
+#include <abstract_int.h>
+#include <ext/signature.h>
 
 //TODO implement #ifdef ENABLE_KDH
 
@@ -213,8 +218,8 @@ int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
 	int krb_checksum_type;
 	gnutls_datum_t dhash; // Computed hash in datum format
 	gnutls_datum_t auth_hash; // Hash from the authenticator
-	gnutls_datum_t enc_authenticator;
-	gnutls_datum_t dec_authenticator;	
+	gnutls_datum_t enc_authenticator; // Encrypted client authenticator
+	gnutls_datum_t dec_authenticator; // Decrypted client authenticator
 	unsigned int auth_len; // Length in bytes of the authenticator	
 	gnutls_certificate_credentials_t cred;
 	gnutls_sign_algorithm_t sh_algo;
@@ -297,9 +302,29 @@ int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
 	// Allocate some memory to hold our hash
 	auth_hash.data = gnutls_malloc( me->output_size );
 	
+	if( auth_hash.data == NULL )
+	{
+		gnutls_assert();
+		return GNUTLS_E_MEMORY_ERROR;
+	}
+	
+	/* Initialize the data structure for the decrypted authenticator. It
+	 * has the same size as the encrypted counterpart.
+	 */
+	dec_authenticator.size = auth_len;
+	dec_authenticator.data = gnutls_malloc( auth_len );
+	
+	if( dec_authenticator.data == NULL )
+	{
+		gnutls_assert();
+		return GNUTLS_E_MEMORY_ERROR;
+	}
+	
 	/* Because the authenticator is encrypted with a kerberos key we 
 	 * can not retrieve the client certificate verify hash ourselves.
 	 * We therefor do a callback in order to retrieve the hash.
+	 * Furthermore we retrieve the decrypted authenticator that will be
+	 * used in the premaster secret computation for KDH-only ciphersuites.
 	 */
 	// Check whether a callback has been defined
 	if( cred->get_server_authenticator_callback )

@@ -1403,7 +1403,7 @@ _gnutls_privkey_get_preferred_sign_algo(gnutls_privkey_t key)
 	return key->preferred_sign_algo;
 }
 
-//TODO implement #ifdef ENABLE_KRB
+//TODO implement #ifdef ENABLE_KDH
 /**
  * gnutls_privkey_generate_krb:
  * @pkey: The private key

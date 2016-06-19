@@ -228,7 +228,8 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 libgnutls_auth_la_LIBADD =
 am_libgnutls_auth_la_OBJECTS = anon.lo cert.lo dh_common.lo dhe.lo \
 	rsa_psk.lo dhe_psk.lo psk.lo psk_passwd.lo rsa.lo srp.lo \
-	srp_passwd.lo srp_rsa.lo srp_sb64.lo anon_ecdh.lo ecdhe.lo
+	srp_passwd.lo srp_rsa.lo srp_sb64.lo anon_ecdh.lo ecdhe.lo \
+	kdh.lo
 libgnutls_auth_la_OBJECTS = $(am_libgnutls_auth_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -1278,7 +1279,7 @@ libgnutls_auth_la_SOURCES = anon.c cert.c dh_common.c dhe.c \
 	rsa_psk.c dhe_psk.c psk.c psk_passwd.c rsa.c srp.c \
 	srp_passwd.c srp_rsa.c srp_sb64.c anon.h cert.h dh_common.h \
 	psk.h psk_passwd.h srp.h srp_passwd.h anon_ecdh.c \
-	ecdhe.c ecdhe.h rsa_common.h
+	ecdhe.c ecdhe.h rsa_common.h kdh.c kdh.h
 
 all: all-am
 
@@ -1341,6 +1342,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dhe.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dhe_psk.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecdhe.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/kdh.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/psk.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/psk_passwd.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rsa.Plo@am__quote@

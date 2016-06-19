@@ -23,6 +23,8 @@
 #ifndef AUTH_KDH_H
 #define AUTH_KDH_H
 
+#include <gnutls_datum.h>
+
 int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session, 
 																				gnutls_buffer_st* data );
 																				

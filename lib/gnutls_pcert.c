@@ -406,7 +406,7 @@ int gnutls_pcert_import_openpgp_raw(gnutls_pcert_st * pcert,
 
 #endif
 
-//TODO implement #ifdef ENABLE_KRB
+//TODO implement #ifdef ENABLE_KDH
 /**
  * gnutls_pcert_import_krb_raw:
  * @pcert: The pcert structure

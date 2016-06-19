@@ -1497,7 +1497,7 @@ _gnutls_proc_openpgp_server_crt(gnutls_session_t session,
 }
 #endif
 
-//TODO implement #ifdef ENABLE_KRB
+//TODO implement #ifdef ENABLE_KDH
 static int _gnutls_proc_krb_crt(gnutls_session_t session,
 				uint8_t * data, size_t data_size)
 {
@@ -1654,7 +1654,7 @@ int _gnutls_proc_crt(gnutls_session_t session, uint8_t * data, size_t data_size)
 		case GNUTLS_CRT_X509:
 			ret = _gnutls_proc_x509_server_crt(session, data, data_size); // REMARK why is this called x509_server_crt? clients call this function also.
 			break;
-//TODO implement #ifdef ENABLE_KRB
+//TODO implement #ifdef ENABLE_KDH
 		// ARPA2 added by TomV for TLS-KDH:
 		case GNUTLS_CRT_KRB:
 			ret = _gnutls_proc_krb_crt(session, data, data_size);
