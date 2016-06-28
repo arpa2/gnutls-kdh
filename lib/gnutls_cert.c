@@ -439,7 +439,7 @@ void
 }
 
 /**
- * gnutls_authenticator_set_retrieve_function:
+ * gnutls_authenticator_set_encode_function:
  * @cred: is a #gnutls_certificate_credentials_t type.
  * @func: is the callback function
  *
@@ -448,9 +448,13 @@ void
  * have negotiated a kdh-enhanced or kdh-only ciphersuite.
  *
  * The callback's function prototype is:
- * int (*callback)(gnutls_datum_t* authenticator,
+ * int (*callback)(gnutls_session_t session,
+ * 								gnutls_datum_t* enc_authenticator,
+ * 								gnutls_datum_t* dec_authenticator,
  *								const gnutls_datum_t* hash,
- *								int checksum_type);
+ *								int32_t checksum_type);
+ * 
+ * @session a gnutls session
  *
  * @enc_authenticator contains a pointer to an empty gnutls_datum_t type.
  * The callback function should craft an encrypted kerberos authenticator 
@@ -478,15 +482,17 @@ void
  *
  * Since: TODO
  **/
-void gnutls_client_authenticator_set_retrieve_function(
+int gnutls_authenticator_set_encode_function(
 		gnutls_certificate_credentials_t cred,
-    gnutls_client_authenticator_retrieve_function * func)
+    gnutls_authenticator_encode_function * func)
 {
-	cred->get_client_authenticator_callback = func;
+	cred->authenticator_encode_callback = func;
+	
+	return GNUTLS_E_SUCCESS;
 }
 
 /**
- * gnutls_client_crt_vrfy_hash_set_retrieve_function:
+ * gnutls_authenticator_set_decode_function:
  * @cred: is a #gnutls_certificate_credentials_t type.
  * @func: is the callback function
  *
@@ -497,9 +503,13 @@ void gnutls_client_authenticator_set_retrieve_function(
  * kdh-enhanced or kdh-only ciphersuite.
  *
  * The callback's function prototype is:
- * int (*callback)(const gnutls_datum_t* authenticator,
+ * int (*callback)(gnutls_session_t session,
+ * 								const gnutls_datum_t* enc_authenticator,
+ * 								gnutls_datum_t* dec_authenticator,
  *								gnutls_datum_t* hash,
- *								int* checksum_type);
+ *								int32_t* checksum_type);
+ * 
+ * @session a gnutls session
  *
  * @enc_authenticator contains a pointer to a gnutls_datum_t type that 
  * holds the encrypted authenticator that has been received from the 
@@ -527,11 +537,13 @@ void gnutls_client_authenticator_set_retrieve_function(
  *
  * Since: TODO
  **/
-void gnutls_server_authenticator_set_retrieve_function(
+int gnutls_authenticator_set_decode_function(
 				gnutls_certificate_credentials_t cred,
-				gnutls_server_authenticator_retrieve_function* func)
+				gnutls_authenticator_decode_function* func)
 {
-	cred->get_server_authenticator_callback = func;
+	cred->authenticator_decode_callback = func;
+	
+	return GNUTLS_E_SUCCESS;
 }
 
 /*-

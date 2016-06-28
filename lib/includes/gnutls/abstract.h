@@ -533,28 +533,30 @@ gnutls_pubkey_print(gnutls_pubkey_t pubkey,
 		    gnutls_datum_t * out);
 
 /* Callback prototype for retrieval of a kerberos authenticator */		    
-typedef int gnutls_client_authenticator_retrieve_function(
+typedef int gnutls_authenticator_encode_function(
+				gnutls_session_t session,
 				gnutls_datum_t* enc_authenticator,
 				gnutls_datum_t* dec_authenticator,
 				const gnutls_datum_t* hash,
-				int checksum_type);
+				int32_t checksum_type);
 
-void gnutls_client_authenticator_set_retrieve_function(
+int gnutls_authenticator_set_encode_function(
 				gnutls_certificate_credentials_t cred,
-				gnutls_client_authenticator_retrieve_function* func);
+				gnutls_authenticator_encode_function* func);
 
 /* Callback prototype for retrieval of an unencrypted authenticator and
  * a client certificate verify hash that is packed inside an 
  * encrypted authenticator */
-typedef int gnutls_server_authenticator_retrieve_function(
+typedef int gnutls_authenticator_decode_function(
+				gnutls_session_t session,
 				const gnutls_datum_t* enc_authenticator,
 				gnutls_datum_t* dec_authenticator,
 				gnutls_datum_t* hash,
-				int* checksum_type);
+				int32_t* checksum_type);
 
-void gnutls_server_authenticator_set_retrieve_function(
+int gnutls_authenticator_set_decode_function(
 				gnutls_certificate_credentials_t cred,
-				gnutls_server_authenticator_retrieve_function* func);
+				gnutls_authenticator_decode_function* func);
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus

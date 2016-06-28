@@ -1877,8 +1877,8 @@ gnutls_priority_get_cipher_suite_index(gnutls_priority_t pcache,
 int _gnutls_cipher_suite_is_kdh( const uint8_t suite[2] )
 {//TODO test
 	unsigned i;
-	const unsigned NUM_SUITES = 10;
-	const uint8_t KDH_suites[] = {
+	static const unsigned NUM_SUITES = 10;
+	static const uint8_t KDH_suites[10][2] = {
 		GNUTLS_ECDHE_KDH_AES_128_CCM,
 		GNUTLS_ECDHE_KDH_AES_128_CCM_8,
 		GNUTLS_ECDHE_KDH_AES_128_GCM_SHA256,

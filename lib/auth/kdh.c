@@ -30,7 +30,7 @@
 //TODO implement #ifdef ENABLE_KDH
 
 inline static int _gnutls_TLSHashID2KrbChecksumTypeID( uint8_t hashID );
-inline static int _gnutls_KrbChecksumTypeID2TLSHashID( int ChksmTypeID );
+inline static int _gnutls_KrbChecksumTypeID2TLSHashID( int32_t ChksmTypeID );
 
 int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session, 
 																				gnutls_buffer_st* data )
@@ -48,7 +48,7 @@ int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session,
 	gnutls_datum_t enc_authenticator; // encrypted client authenticator
 	gnutls_datum_t dec_authenticator; // decrypted client authenticator
 	gnutls_certificate_credentials_t cred;
-	int krb_checksum_type;
+	int32_t krb_checksum_type;
 	
 	
 	// Check whether there are credentials set
@@ -144,12 +144,13 @@ int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session,
 		/* We are now going to pass this hash to a callback function that
 		 * wraps it into a kerberos authenticator.
 		 */
-		if( cred->get_client_authenticator_callback )
+		if( cred->authenticator_encode_callback )
 		{
-			ret = cred->get_client_authenticator_callback( &enc_authenticator,
-																										&dec_authenticator,
-																										&dhash,
-																										krb_checksum_type );
+			ret = cred->authenticator_encode_callback( session,
+																								&enc_authenticator,
+																								&dec_authenticator,
+																								&dhash,
+																								krb_checksum_type );
 			if( ret < 0 ) return gnutls_assert_val( GNUTLS_E_USER_ERROR );			
 		} 
 		else
@@ -215,7 +216,7 @@ int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
 				  uint8_t* data, size_t data_size )
 {
 	int ret;
-	int krb_checksum_type;
+	int32_t krb_checksum_type;
 	gnutls_datum_t dhash; // Computed hash in datum format
 	gnutls_datum_t auth_hash; // Hash from the authenticator
 	gnutls_datum_t enc_authenticator; // Encrypted client authenticator
@@ -327,12 +328,13 @@ int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
 	 * used in the premaster secret computation for KDH-only ciphersuites.
 	 */
 	// Check whether a callback has been defined
-	if( cred->get_server_authenticator_callback )
+	if( cred->authenticator_decode_callback )
 	{
-		ret = cred->get_server_authenticator_callback( &enc_authenticator,
-																									&dec_authenticator,
-																									&auth_hash,	
-																									&krb_checksum_type );
+		ret = cred->authenticator_decode_callback( session,
+																							&enc_authenticator,
+																							&dec_authenticator,
+																							&auth_hash,	
+																							&krb_checksum_type );
 		if( ret < 0 ) return gnutls_assert_val( GNUTLS_E_USER_ERROR );
 	} else
 	{
@@ -478,10 +480,10 @@ int _gnutls_set_kdh_pms( gnutls_session_t session,
  * to IDs from IANA's Kerberos Checksum Type Numbers.
  * A 0 value means that there is no mapping.
  */
-inline static int _gnutls_TLSHashID2KrbChecksumTypeID( uint8_t hashID )
+inline static int32_t _gnutls_TLSHashID2KrbChecksumTypeID( uint8_t hashID )
 {
-	const uint8_t MAPPING_LEN = 7;
-	const int TLS_KRB_Mapping[] = { //Assume continuous defined values
+	static const uint8_t MAPPING_LEN = 7;
+	static const int32_t TLS_KRB_Mapping[] = { //Assume continuous defined values
 		0, // none
 		0, // md5
 		10, // sha1
@@ -504,10 +506,10 @@ inline static int _gnutls_TLSHashID2KrbChecksumTypeID( uint8_t hashID )
  * to IDs from IANA's TLS HashAlgorithm Registry.
  * A 0 value means that there is no mapping.
  */
-inline static int _gnutls_KrbChecksumTypeID2TLSHashID( int ChksmTypeID )
+inline static int _gnutls_KrbChecksumTypeID2TLSHashID( int32_t ChksmTypeID )
 {
-	const int MAPPING_MAX_ID = 18;
-	const uint8_t KRB_TLS_Mapping[] = { //Assume continuous defined values
+	static const int32_t MAPPING_MAX_ID = 18;
+	static const uint8_t KRB_TLS_Mapping[] = { //Assume continuous defined values
 		0, // Reserved
 		0, // CRC32
 		0, // rsa-md4

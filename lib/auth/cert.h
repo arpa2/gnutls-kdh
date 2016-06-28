@@ -81,8 +81,8 @@ typedef struct gnutls_certificate_credentials_st {
 
 //TODO implement #ifdef ENABLE_KDH
 	/* KDH specific stuff */
-	gnutls_client_authenticator_retrieve_function *get_client_authenticator_callback;
-	gnutls_server_authenticator_retrieve_function *get_server_authenticator_callback;
+	gnutls_authenticator_encode_function *authenticator_encode_callback;
+	gnutls_authenticator_decode_function *authenticator_decode_callback;
 //TODO implement #endif
 
 	struct pin_info_st pin;

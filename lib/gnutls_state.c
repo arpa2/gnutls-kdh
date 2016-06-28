@@ -211,6 +211,16 @@ gnutls_server_certificate_type_get(gnutls_session_t session)
 	return session->security_parameters.server_cert_type;
 }
 
+/**
+ * gnutls_certificate_type_get_ours:
+ * @session: is a #gnutls_session_t type.
+ *
+ * The server certificate type is by default X.509, 
+ * unless it is negotiated as a TLS extension.
+ *
+ * Returns: the currently used #gnutls_certificate_type_t 
+ * certificate type for yourself.
+ **/
 gnutls_certificate_type_t
 gnutls_certificate_type_get_ours( gnutls_session_t session )
 {
@@ -219,6 +229,16 @@ gnutls_certificate_type_get_ours( gnutls_session_t session )
 				 ? GNUTLS_SERVER : GNUTLS_CLIENT );
 }
 
+/**
+ * gnutls_certificate_type_get_peers:
+ * @session: is a #gnutls_session_t type.
+ *
+ * The server certificate type is by default X.509, 
+ * unless it is negotiated as a TLS extension.
+ *
+ * Returns: the currently used #gnutls_certificate_type_t 
+ * certificate type for the peer.
+ **/
 gnutls_certificate_type_t
 gnutls_certificate_type_get_peers( gnutls_session_t session )
 {
