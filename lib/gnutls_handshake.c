@@ -402,10 +402,19 @@ _gnutls_finished(gnutls_session_t session, int type, void *ret,
 	 * Returns the verify_data_length property of a ciphersuite entry.
 	 * 
 	 * Added for draft support for variable verify_data length.
+	 * 
+	 * Note: additional work needs to be done to conform to the 
+	 * following extension https://tools.ietf.org/html/draft-mavrogiannopoulos-tls-more-extensions-00#section-3
 	 */
 	verify_data_length = _gnutls_cipher_suite_get_verify_data_len(
 													session->security_parameters.cipher_suite);
-	
+													
+	if( verify_data_length == VERIFY_DATA_LEN_UNKNOWN ||
+			verify_data_length < MIN_VERIFY_DATA_SIZE )
+	{
+		// Default of tls 1.2 equals the values for tls 1.0 and tls 1.1
+		verify_data_length = DEFAULT_VERIFY_DATA_LEN_TLS1_2;
+	}	
 
 	return _gnutls_PRF(session,
 			   session->security_parameters.master_secret,
