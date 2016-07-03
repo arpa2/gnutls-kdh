@@ -74,13 +74,25 @@ static int _gnutls_server_cert_type_recv_params( gnutls_session_t session,
 
 	
 	// Compare packet length with expected packet length
-	DECR_LEN( len, 1 );
-	if( data[0] != len ) 
+	// On a server, compare packet length with expected packet length
+	// On a client, ensure that only a single byte was received
+	if( _gnutls_server_mode( session ))
 	{
-		gnutls_assert();
-		return GNUTLS_E_UNEXPECTED_PACKET_LENGTH;
+		DECR_LEN( len, 1 );
+		if( data[0] != len ) 
+		{
+			gnutls_assert();
+			return GNUTLS_E_UNEXPECTED_PACKET_LENGTH;
+		}
+		data_idx += 1;
+	} else
+	{
+		if( len != 1 )
+		{
+			gnutls_assert();
+			return GNUTLS_E_UNEXPECTED_PACKET_LENGTH;
+		}
 	}
-	data_idx += 1;
 	
 	// Create a struct to hold the values from the buffer
 	cert_types = gnutls_calloc( 1, sizeof( *cert_types ) );
@@ -95,14 +107,6 @@ static int _gnutls_server_cert_type_recv_params( gnutls_session_t session,
 	
 	if( _gnutls_client_mode( session ) ) // client mode
 	{
-		// We should receive exactly 1 cert type back from the server
-		if( cert_types->size != 1 )
-		{
-			gnutls_assert();
-			ret = GNUTLS_E_UNEXPECTED_PACKET_LENGTH;
-			goto finished;
-		}
-		
 		/* The server picked one of the offered cert types iff he supports
 		 * at least one of them. If both parties play by the rules then we 
 		 * may only receive a cert type that we offered, i.e. one that we 
