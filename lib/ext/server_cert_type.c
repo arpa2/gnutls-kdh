@@ -104,6 +104,10 @@ static int _gnutls_server_cert_type_recv_params( gnutls_session_t session,
 	
 	// Copy the contents of the buffer to our struct
 	_gnutls_set_datum( cert_types, data_idx, len );
+
+	// Store the server certificate types in our session
+	epriv = cert_types;
+	_gnutls_ext_set_session_data( session, GNUTLS_EXTENSION_SERVER_CERT_TYPE, epriv );
 	
 	if( _gnutls_client_mode( session ) ) // client mode
 	{
@@ -152,10 +156,6 @@ static int _gnutls_server_cert_type_recv_params( gnutls_session_t session,
 		
 	} else // server mode
 	{
-		// Store the server certificate types in our session
-		epriv = cert_types;
-		_gnutls_ext_set_session_data( session, GNUTLS_EXTENSION_SERVER_CERT_TYPE, epriv );
-		
 		/* We reveive a list of supported certificate types that the client
 		 * is able to process when offered by the server via a subsequent 
 		 * Certificate message. This list is sorted by order of preference. 
