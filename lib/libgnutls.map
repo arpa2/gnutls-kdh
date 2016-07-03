@@ -35,6 +35,8 @@ GNUTLS_3_4
 	gnutls_auth_client_get_type;
 	gnutls_auth_get_type;
 	gnutls_auth_server_get_type;
+	gnutls_authenticator_set_encode_function;
+	gnutls_authenticator_set_decode_function;
 	gnutls_bye;
 	gnutls_calloc;
 	gnutls_certificate_activation_time_peers;
