@@ -464,7 +464,7 @@ int _gnutls_set_kdh_pms( gnutls_session_t session,
 	p += DH_key->size;
 	// Write the authenticator size
 	_gnutls_write_uint16( authenticator->size, p );
-	p += authenticator->size;
+	p += 2;
 	// Write the authenticator
 	memcpy( p, authenticator->data, authenticator->size );
 	

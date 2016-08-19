@@ -226,7 +226,7 @@ gnutls_certificate_type_get_ours( gnutls_session_t session )
 {
 	return gnutls_certificate_type_get2( session,
 			_gnutls_client_mode( session )
-				 ? GNUTLS_SERVER : GNUTLS_CLIENT );
+				 ? GNUTLS_CTYPE_SERVER : GNUTLS_CTYPE_CLIENT );
 }
 
 /**
@@ -244,7 +244,7 @@ gnutls_certificate_type_get_peers( gnutls_session_t session )
 {
 	return gnutls_certificate_type_get2( session,
 			_gnutls_server_mode( session )
-				 ? GNUTLS_SERVER : GNUTLS_CLIENT );
+				 ? GNUTLS_CTYPE_SERVER : GNUTLS_CTYPE_CLIENT );
 }
 // end
 

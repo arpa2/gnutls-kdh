@@ -1278,7 +1278,7 @@ static const gnutls_cipher_suite_entry_st cs_algorithms[] = {
 				GNUTLS_MAC_SHA256,
 				//min tls ver,
 				//min dtls ver,
-				GNUTLS_MAC_SHA384,
+				GNUTLS_MAC_SHA256,
 				32),
 	ENTRY_PRF(GNUTLS_ECDHE_KDH_ARIA_256_GCM_SHA384,
 				GNUTLS_CIPHER_,
