@@ -93,7 +93,7 @@ const mod_auth_st ecdhe_rsa_auth_struct = {
 	_gnutls_proc_cert_cert_req
 };
 
-// ARPA2 added by TomV & RickvR for TLS-KDH:
+// ARPA2 added by TomV for TLS-KDH:
 const mod_auth_st ecdhe_krb_auth_struct = {
 	"ECDHE_KRB",
 	_gnutls_gen_cert_server_crt, // servers can also send a ticket
