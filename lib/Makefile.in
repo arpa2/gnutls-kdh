@@ -337,11 +337,11 @@ am__libgnutls_la_SOURCES_DIST = abstract_int.h debug.h \
 	gnutls_pcert.c gnutls_pubkey.c locks.c gnutls_dtls.c \
 	system_override.c crypto-backend.c verify-tofu.c pin.c tpm.c \
 	fips.c safe-memfuncs.c inet_pton.c atfork.c atfork.h \
-	system-keys.h urls.c urls.h auto-verify.c system-keys-win.c \
-	system-keys-dummy.c crypto-selftests.c crypto-selftests-pk.c \
-	pkcs11.c pkcs11x.c pkcs11_privkey.c pkcs11_write.c \
-	pkcs11_secret.c pkcs11_int.c gnutls_srp.c gnutls_psk.c \
-	gnutls.asn pkix.asn libgnutls.map
+	system-keys.h urls.c urls.h auto-verify.c gnutls_krb.c \
+	system-keys-win.c system-keys-dummy.c crypto-selftests.c \
+	crypto-selftests-pk.c pkcs11.c pkcs11x.c pkcs11_privkey.c \
+	pkcs11_write.c pkcs11_secret.c pkcs11_int.c gnutls_srp.c \
+	gnutls_psk.c gnutls.asn pkix.asn libgnutls.map
 am__objects_1 =
 am__objects_2 = $(am__objects_1)
 @WINDOWS_TRUE@am__objects_3 = system-keys-win.lo
@@ -368,8 +368,9 @@ am__objects_7 = gnutls_range.lo gnutls_record.lo gnutls_compress.lo \
 	gnutls_privkey.lo gnutls_pcert.lo gnutls_pubkey.lo locks.lo \
 	gnutls_dtls.lo system_override.lo crypto-backend.lo \
 	verify-tofu.lo pin.lo tpm.lo fips.lo safe-memfuncs.lo \
-	inet_pton.lo atfork.lo urls.lo auto-verify.lo $(am__objects_3) \
-	$(am__objects_4) $(am__objects_5) $(am__objects_6)
+	inet_pton.lo atfork.lo urls.lo auto-verify.lo gnutls_krb.lo \
+	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
+	$(am__objects_6)
 am__objects_8 = gnutls_srp.lo
 am__objects_9 = gnutls_psk.lo
 am_libgnutls_la_OBJECTS = $(am__objects_2) $(am__objects_7) \
@@ -1525,7 +1526,7 @@ COBJECTS = gnutls_range.c gnutls_record.c gnutls_compress.c debug.c \
 	gnutls_dtls.c system_override.c crypto-backend.c verify-tofu.c \
 	pin.c tpm.c fips.c safe-memfuncs.c inet_pton.c atfork.c \
 	atfork.h system-keys.h urls.c urls.h auto-verify.c \
-	$(am__append_5) $(am__append_6) $(am__append_7) \
+	gnutls_krb.c $(am__append_5) $(am__append_6) $(am__append_7) \
 	$(am__append_8)
 HFILES = abstract_int.h debug.h gnutls_compress.h gnutls_cipher.h \
 	gnutls_buffers.h gnutls_errors.h gnutls_int.h gnutls_dtls.h \
@@ -1686,6 +1687,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnutls_handshake.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnutls_hash_int.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnutls_helper.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnutls_krb.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnutls_kx.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnutls_mbuffers.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnutls_mem.Plo@am__quote@

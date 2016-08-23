@@ -50,7 +50,7 @@ inline static int _gnutls_cert_type2num( int cert_type );
 extension_entry_st ext_mod_server_cert_type = {
 	.name = "Server Certificate Type",
 	.type = GNUTLS_EXTENSION_SERVER_CERT_TYPE,
-	.parse_type = GNUTLS_EXT_APPLICATION, //TODO choose
+	.parse_type = GNUTLS_EXT_TLS,
 	.recv_func = _gnutls_server_cert_type_recv_params,
 	.send_func = _gnutls_server_cert_type_send_params,
 	.pack_func = _gnutls_server_cert_type_pack,
@@ -221,9 +221,14 @@ static int _gnutls_server_cert_type_send_params( gnutls_session_t session,
 		 */		  
 		if( cert_priors->algorithms > 0) // Priorities are explicitly set
 		{ 
-			if( cert_priors->algorithms > 1 && 
+			if( cert_priors->algorithms == 1 && 
 					cert_priors->priority[0] == DEFAULT_CERT_TYPE ) 
 			{
+				_gnutls_handshake_log
+					("EXT[%p]: Server certificate type was set to default cert type (%s). "
+					"We therefore do not send this extension.\n", 
+					session, gnutls_certificate_type_get_name(DEFAULT_CERT_TYPE));
+					
 				// Explicitly set but default ctype, so don't send anything
 				return 0;
 			}
@@ -237,9 +242,14 @@ static int _gnutls_server_cert_type_send_params( gnutls_session_t session,
 			}
 			_gnutls_set_datum( cert_types, NULL, 0 );
 			
-			/* We are only allowed to send certificate types that we support, 
-			 * i.e. have credentials for. Therefor we check this here and 
-			 * prune our original list.
+			/* We are only allowed to send certificate types that we support. 
+			 * Therefore we check this here and prune our original list.
+			 * This check might seem redundant now because we don't check for
+			 * credentials (they are not needed) and only check the 
+			 * priorities over which we already iterate. In the future, 
+			 * additional checks might be necessary and they can be easily 
+			 * added in the ..type_supported() routine without modifying the 
+			 * structure of the code here.
 			 */
 			for( i = 0; i < cert_priors->algorithms; i++ ) 
 			{
@@ -249,13 +259,33 @@ static int _gnutls_server_cert_type_send_params( gnutls_session_t session,
 				{
 					cert_type = _gnutls_cert_type2num( cert_priors->priority[i] );
 					ret 			= _gnutls_datum_append( cert_types, &cert_type, 1 );
+					
 					if (ret < 0) {
 						// Cleanup
 						_gnutls_free_datum( cert_types );
 						gnutls_free( cert_types );
+						
 						return gnutls_assert_val(ret);
 					}
+					
+					_gnutls_handshake_log
+					("EXT[%p]: Sent server cert type (%d) %s\n", session,
+					cert_type, gnutls_certificate_type_get_name(cert_priors->priority[i]));
 				}
+			}
+			
+			/* Check whether there are any supported certificate types left
+			 * after the previous pruning step. If not, we do not send this
+			 * extension.
+			 */			
+			if( cert_types->size == 0 )
+			{
+				_gnutls_handshake_log
+					("EXT[%p]: Server certificate types were set but none of them is supported. " 
+					"We do not send this extension.\n", 
+					session);
+
+				return 0;
 			}
 			
 			// Also store internally what we are going to send

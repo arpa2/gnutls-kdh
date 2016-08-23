@@ -1669,12 +1669,11 @@ int gnutls_ocsp_status_request_is_checked(gnutls_session_t session,
  * Just like openpgp stuff
  */
 int gnutls_certificate_set_krb_ticket( gnutls_certificate_credentials_t cred,
-																	const gnutls_datum_t ticket );
+																	const gnutls_datum_t* ticket );
  
-int gnutls_certificate_get_krb_ticket(gnutls_certificate_credentials_t cred,
-                                unsigned index,
-                                gnutls_x509_crt_t **crt_list,
-                                unsigned *crt_list_size);
+int gnutls_certificate_get_krb_ticket( gnutls_certificate_credentials_t cred,
+																	unsigned index,
+																	gnutls_datum_t* ticket );
 
 //TODO future: add functions for raw certificates
 // end

@@ -177,7 +177,7 @@ typedef enum gnutls_cipher_algorithm {
  * @GNUTLS_KX_RSA_PSK: RSA-PSK key-exchange algorithm.
  * 
  * ARPA2 added by TomV & RickvR for TLS-KDH:
- * @GNUTLS_KX_ECDHE_KDH: ECDHE-KDH key-exchange algorithm.
+ * @GNUTLS_KX_ECDHE_KRB: ECDHE-KRB key-exchange algorithm.
  *
  * Enumeration of different key exchange algorithms.
  */
@@ -200,8 +200,8 @@ typedef enum {
 	GNUTLS_KX_RSA_PSK = 15,
 	// ARPA2 added by TomV & RickvR for TLS-KDH:
 	GNUTLS_KX_ECDHE_KRB = 16,
-	GNUTLS_KX_ECDHE_KRB_RSA = 17,
-	GNUTLS_KX_ECDHE_KRB_ECDSA = 18
+	//GNUTLS_KX_ECDHE_KRB_RSA = 17,
+	//GNUTLS_KX_ECDHE_KRB_ECDSA = 18
 	// end
 } gnutls_kx_algorithm_t;
 
@@ -1669,12 +1669,11 @@ int gnutls_ocsp_status_request_is_checked(gnutls_session_t session,
  * Just like openpgp stuff
  */
 int gnutls_certificate_set_krb_ticket( gnutls_certificate_credentials_t cred,
-																	const gnutls_datum_t ticket );
+																	const gnutls_datum_t* ticket );
  
-int gnutls_certificate_get_krb_ticket(gnutls_certificate_credentials_t cred,
-                                unsigned index,
-                                gnutls_x509_crt_t **crt_list,
-                                unsigned *crt_list_size);
+int gnutls_certificate_get_krb_ticket( gnutls_certificate_credentials_t cred,
+																	unsigned index,
+																	gnutls_datum_t* ticket );
 
 //TODO future: add functions for raw certificates
 // end

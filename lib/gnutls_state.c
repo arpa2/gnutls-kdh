@@ -380,8 +380,9 @@ _gnutls_session_cert_type_supported( gnutls_session_t session,
 		if( ret < 0 ) return ret;
 	}
 
-	/* So far so good. We have the required certificates. Now check 
-	 * whether we are allowed to use them according to our priorities.
+	/* So far so good. We have the required credentials (if needed). 
+	 * Now check whether we are allowed to use them according to our 
+	 * priorities.
 	 */
 	// First determine whether we are using asymmetric cert types
 	if( _gnutls_asym_cert_types( session ) ) 
@@ -409,8 +410,8 @@ _gnutls_session_cert_type_supported( gnutls_session_t session,
 	    && cert_type == DEFAULT_CERT_TYPE)
 		return 0; // ok
 
-	/* Explicit priorities are set. Now lets find out whether our
-	 * cert type is in our priority list, i.e. set of allowed cert types.
+	/* Now lets find out whether our cert type is in our priority 
+	 * list, i.e. set of allowed cert types.
 	 */
 	for (i = 0; i < ctype_priorities->algorithms; i++) 
 	{

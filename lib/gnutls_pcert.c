@@ -444,8 +444,9 @@ int gnutls_pcert_import_krb_raw( gnutls_pcert_st* pcert,
 	 * mechanism.
 	 */
 	pcert->pubkey->pk_algorithm = GNUTLS_PK_KDH;
-	pcert->cert 								= *ticket;
-	pcert->type 								= GNUTLS_CRT_KRB;	
+	pcert->type 								= GNUTLS_CRT_KRB;
+	
+	_gnutls_set_datum( &pcert->cert, ticket->data, ticket->size );
 
 	return GNUTLS_E_SUCCESS;
 }

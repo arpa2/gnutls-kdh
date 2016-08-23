@@ -24,6 +24,10 @@
  * Just like openpgp stuff
  */
 
+#include <gnutls_int.h>
+#include <auth/cert.h>
+#include <gnutls_datum.h>
+
 /**
  * gnutls_certificate_get_krb_ticket:
  * @cred: is a #gnutls_certificate_credentials_t type.
@@ -89,7 +93,7 @@ int gnutls_certificate_get_krb_ticket( gnutls_certificate_credentials_t cred,
  *   otherwise a negative error code is returned.
  **/																
 int gnutls_certificate_set_krb_ticket( gnutls_certificate_credentials_t cred,
-																	const gnutls_datum_t* ticket );
+																	const gnutls_datum_t* ticket )
 {
 	int ret;
 	gnutls_privkey_t privkey;

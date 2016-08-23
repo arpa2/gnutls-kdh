@@ -48,11 +48,13 @@ GNUTLS_3_4
 	gnutls_certificate_free_credentials;
 	gnutls_certificate_free_crls;
 	gnutls_certificate_free_keys;
+	gnutls_certificate_get_krb_ticket;
 	gnutls_certificate_get_ours;
 	gnutls_certificate_get_peers;
 	gnutls_certificate_send_x509_rdn_sequence;
 	gnutls_certificate_server_set_request;
 	gnutls_certificate_set_dh_params;
+	gnutls_certificate_set_krb_ticket;
 	gnutls_certificate_set_openpgp_key;
 	gnutls_certificate_set_openpgp_key_file2;
 	gnutls_certificate_set_openpgp_key_file;
@@ -74,6 +76,7 @@ GNUTLS_3_4
 	gnutls_certificate_set_x509_trust_file;
 	gnutls_certificate_set_x509_trust_mem;
 	gnutls_certificate_type_get;
+	gnutls_certificate_type_get2;
 	gnutls_certificate_type_get_ours;
 	gnutls_certificate_type_get_peers;
 	gnutls_certificate_type_get_id;
@@ -88,6 +91,7 @@ GNUTLS_3_4
 	gnutls_cipher_list;
 	gnutls_cipher_suite_get_name;
 	gnutls_cipher_suite_info;
+	gnutls_client_certificate_type_get;
 	gnutls_compression_get;
 	gnutls_compression_get_id;
 	gnutls_compression_get_name;
@@ -289,6 +293,7 @@ GNUTLS_3_4
 	gnutls_record_set_max_size;
 	gnutls_rehandshake;
 	gnutls_secure_malloc;
+	gnutls_server_certificate_type_get;
 	gnutls_server_name_get;
 	gnutls_server_name_set;
 	gnutls_session_enable_compatibility_mode;
