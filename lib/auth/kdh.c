@@ -32,6 +32,18 @@
 inline static int _gnutls_TLSHashID2KrbChecksumTypeID( uint8_t hashID );
 inline static int _gnutls_KrbChecksumTypeID2TLSHashID( int32_t ChksmTypeID );
 
+
+/* Generate a Kerberos Authenticator message. It conforms to the
+ * DigitallySigned struct format.
+ * 
+ * <HashID (1 byte)
+ * ++
+ * SigID (1 byte)
+ * ++
+ * auth_length (2 bytes)
+ * ++
+ * Authenticator (auth_length bytes)>
+ */
 int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session, 
 																				gnutls_buffer_st* data )
 {
@@ -112,7 +124,7 @@ int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session,
 		if( aid == NULL )
 			return gnutls_assert_val( GNUTLS_E_UNKNOWN_ALGORITHM );
 			
-		// Write our signature & hash algorithm IDs to the buffer
+		// Write our signature & hash algorithm IDs to the buffer (2 bytes)
 		tmp[0] = aid->hash_algorithm;
 		tmp[1] = aid->sign_algorithm;
 		ret = _gnutls_buffer_append_data( data, tmp, 2 );
@@ -163,8 +175,11 @@ int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session,
 		
 		/* Now that we have the authenticator we are going to serialize it
 		 * into the output buffer so that it can be transmitted to the 
-		 * peer.
-		 */
+		 * peer. Our message looks like:
+		 * <length++authenticator> where
+	   * length = 2 bytes and
+	   * certificate = length bytes.
+	   */
 		ret = _gnutls_buffer_append_data_prefix( data, 16, 
 																						enc_authenticator.data,
 																						enc_authenticator.size );
@@ -212,6 +227,18 @@ int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session,
 	}
 }
 
+
+/* Process a Kerberos Authenticator message. It conforms to the
+ * DigitallySigned struct format.
+ * 
+ * <HashID (1 byte)
+ * ++
+ * SigID (1 byte)
+ * ++
+ * auth_length (2 bytes)
+ * ++
+ * Authenticator (auth_length bytes)>
+ */
 int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
 				  uint8_t* data, size_t data_size )
 {
@@ -276,12 +303,14 @@ int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
 			      session,
 			      gnutls_sign_algorithm_get_name( sh_algo ));
 
-	/* Read the length of our authenticator. The length prefix itself
-	 * has a length of 3 bytes.
+	/* Read the length of our authenticator. Our message looks like:
+	 * <length++authenticator> where
+	 * length = 2 bytes and
+	 * certificate = length bytes.
 	 */
-	DECR_LEN( dsize, 3 );
-	auth_len = _gnutls_read_uint24( pdata );
-	pdata += 3;
+	DECR_LEN( dsize, 2 );
+	auth_len = _gnutls_read_uint16( pdata );
+	pdata += 2;
 
 	// Read our authenticator
 	DECR_LEN_FINAL( dsize, auth_len );
@@ -402,7 +431,7 @@ int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
 			      session );
 			      
 	// Cleanup
-	_gnutls_free_datum( &auth_hash ); //TODO check freeing
+	_gnutls_free_datum( &auth_hash ); //TODO check freeing + enc / dec auths
 			     
 	// All OK 
 	return 0;
