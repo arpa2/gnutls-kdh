@@ -122,7 +122,9 @@ static int _gnutls_server_cert_type_recv_params( gnutls_session_t session,
 				goto finished;
 		}
 		
-		// Get the cert types that we sent to the server
+		/* Get the cert types that we sent to the server (they were stored
+		 * in IANA representation.
+		 */
 		ret = _gnutls_ext_get_session_data( session, 
 						GNUTLS_EXTENSION_SERVER_CERT_TYPE, &epriv );
 		if( ret < 0 )
@@ -137,7 +139,7 @@ static int _gnutls_server_cert_type_recv_params( gnutls_session_t session,
 		// Check whether what we got back is actually offered by us
 		for( i = 0; i < priv->size; i++ )
 		{
-			if( priv->data[i] == cert_type ) found = 1;
+			if( _gnutls_num2cert_type(priv->data[i]) == cert_type ) found = 1;
 		}
 		
 		if( found ) {
@@ -152,8 +154,7 @@ static int _gnutls_server_cert_type_recv_params( gnutls_session_t session,
 	finished:
 		_gnutls_free_datum( cert_types );
 		gnutls_free( cert_types );
-		return ret;
-	
+		return ret;	
 		
 	} else // server mode
 	{
@@ -206,7 +207,7 @@ static int _gnutls_server_cert_type_send_params( gnutls_session_t session,
 	int ret;
 	uint8_t cert_type, i = 0;
 	priority_st* cert_priors;
-	gnutls_datum_t* cert_types; // Supported ctypes
+	gnutls_datum_t* cert_types; // Supported ctypes in IANA representation
 	
 	
 	if( _gnutls_client_mode( session ) ) // Client mode
@@ -257,6 +258,7 @@ static int _gnutls_server_cert_type_send_params( gnutls_session_t session,
 								cert_priors->priority[i], false, 
 								GNUTLS_CTYPE_SERVER ) == 0 ) 
 				{
+					// Convert to IANA representation
 					cert_type = _gnutls_cert_type2num( cert_priors->priority[i] );
 					ret 			= _gnutls_datum_append( cert_types, &cert_type, 1 );
 					
@@ -288,7 +290,9 @@ static int _gnutls_server_cert_type_send_params( gnutls_session_t session,
 				return 0;
 			}
 			
-			// Also store internally what we are going to send
+			/* Also store internally what we are going to send. We need this
+			 * for a check when we receive the server's choice.
+			 */
 			_gnutls_ext_set_session_data( session, GNUTLS_EXTENSION_SERVER_CERT_TYPE, 
 					cert_types );
 			

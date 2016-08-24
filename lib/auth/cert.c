@@ -2405,10 +2405,12 @@ _gnutls_server_select_cert(gnutls_session_t session,
 
 	for (j = 0; j < pk_algos_size; j++) {
 		_gnutls_handshake_log
-		    ("HSK[%p]: Requested PK algorithm: %s (%d) -- ctype: %s (%d)\n",
+		    ("HSK[%p]: Requested PK algorithm: %s (%d) -- server ctype: %s (%d)\n",
 		     session, gnutls_pk_get_name(pk_algos[j]), pk_algos[j],
 		     gnutls_certificate_type_get_name(cert_type),
 		     cert_type);
+		     
+		// als pk algo == kdh dan hoeven we geen cert te hebben als server
 
 		for (i = 0; i < cred->ncerts; i++) {
 			gnutls_pk_algorithm pk =
@@ -2428,13 +2430,11 @@ _gnutls_server_select_cert(gnutls_session_t session,
 			if (pk_algos[j] == pk) {
 				/* if cert type matches
 				 */
-	  /* *INDENT-OFF* */
-	  if (cert_type == cred->certs[i].cert_list[0].type)
-	    {
-	      idx = i;
-	      goto finished;
-	    }
-	  /* *INDENT-ON* */
+				if (cert_type == cred->certs[i].cert_list[0].type)
+				{
+					idx = i;
+					goto finished;
+				}
 			}
 		}
 	}
