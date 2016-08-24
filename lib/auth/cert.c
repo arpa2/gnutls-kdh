@@ -48,6 +48,7 @@
 #include <x509/verify-high.h>
 #include <gnutls/abstract.h>
 #include "debug.h"
+#include "kdh.h"
 
 #ifdef ENABLE_OPENPGP
 #include "openpgp/gnutls_openpgp.h"
@@ -1011,7 +1012,7 @@ gen_openpgp_certificate_fpr(gnutls_session_t session, gnutls_buffer_st * data)
 #endif
 
 //TODO implement #ifdef ENABLE_KDH
-static int
+int
 _gnutls_gen_krb_crt(gnutls_session_t session, gnutls_buffer_st* data)
 {
 	int ret;
@@ -1023,8 +1024,15 @@ _gnutls_gen_krb_crt(gnutls_session_t session, gnutls_buffer_st* data)
 	if( (ret = _gnutls_get_selected_cert( session, &apr_cert_list,
 				       &apr_cert_list_length, &apr_pkey )) < 0 )
 	{
-		gnutls_assert();
-		return ret;
+		if( _gnutls_server_mode( session ) )
+		{
+			// In KDH-only mode a server certificate is optional.
+			return 0;
+		} else {
+			// In KDH-only mode a client certificate is obligatory.
+			gnutls_assert();		
+			return ret;
+		}
 	}
 	//TODO comment for server ticket case...
 	// We should have exactly one certificate containing our ticket.
@@ -2345,7 +2353,7 @@ _gnutls_server_select_cert(gnutls_session_t session,
 	 * use it and leave.
 	 */
 	if (cred->get_cert_callback
-	    || cred->get_cert_callback2) {
+	    || cred->get_cert_callback2) { // REMARK: why callback and not callback2?
 		ret = call_get_cert_callback(session, NULL, 0, NULL, 0);
 		if (ret < 0)
 			return gnutls_assert_val(ret);
@@ -2410,8 +2418,10 @@ _gnutls_server_select_cert(gnutls_session_t session,
 		     gnutls_certificate_type_get_name(cert_type),
 		     cert_type);
 		     
-		// als pk algo == kdh dan hoeven we geen cert te hebben als server
-
+		/* In case the pk algo is KDH, we want to look for a server certificate
+		 * but it is not mandatory to find one. After the following search loop
+		 * we check this condition and approve it.
+		 */ 
 		for (i = 0; i < cred->ncerts; i++) {
 			gnutls_pk_algorithm pk =
 			    gnutls_pubkey_get_pk_algorithm(cred->certs[i].
@@ -2437,6 +2447,20 @@ _gnutls_server_select_cert(gnutls_session_t session,
 				}
 			}
 		}
+		
+		/* Apparently we found no certificate matching the current pk algo.
+		 * If the pk algo is KDH then this is okay. Only a client cert
+		 * is required.
+		 */
+		if( pk_algos[j] == GNUTLS_PK_KDH )
+		{
+			_gnutls_handshake_log
+				    ("HSK[%p]: no matching server certificate was found. This is OK for %s (%d).\n",
+				     session, gnutls_pk_get_name(pk_algos[j]), pk_algos[j]);
+			// ok
+			return 0;
+		}
+		
 	}
 
 	/* store the certificate pointer for future use, in the handshake.

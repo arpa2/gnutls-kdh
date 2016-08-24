@@ -94,10 +94,10 @@ const mod_auth_st ecdhe_rsa_auth_struct = {
 };
 
 // ARPA2 added by TomV for TLS-KDH:
-const mod_auth_st ecdhe_krb_auth_struct = {
+const mod_auth_st ecdhe_krb_auth_struct = { // For KDH-only mode
 	"ECDHE_KRB",
-	_gnutls_gen_cert_server_crt, // servers can also send a ticket
-	_gnutls_gen_cert_client_crt,
+	_gnutls_gen_krb_crt, // servers can also send a ticket
+	_gnutls_gen_krb_crt,
 	gen_krb_ecdhe_server_kx, //Kx without signature, no privkey available.
 	_gnutls_gen_ecdh_common_client_kx,
 	_gnutls_gen_cert_krb_authenticator,

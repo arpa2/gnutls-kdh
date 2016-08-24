@@ -254,8 +254,15 @@ _gnutls_selected_cert_supported_kx(gnutls_session_t session,
 	gnutls_pcert_st *cert;
 	int i;
 
-	if (session->internals.selected_cert_list_length == 0) {
-		*alg_size = 0;
+
+	if(session->internals.selected_cert_list_length == 0)
+	{
+		/* No server certificate was selected. This is only allowed for
+		 * the KDH kx algo. We therefore allow it here.
+		 */
+		alg[0] = GNUTLS_KX_ECDHE_KRB;
+		*alg_size = 1;
+		
 		return 0;
 	}
 

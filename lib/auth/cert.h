@@ -168,10 +168,9 @@ int _gnutls_proc_dhe_signature(gnutls_session_t session, uint8_t * data,
 			       gnutls_datum_t * vparams);
 
 // ARPA2 added by TomV & RickvR for TLS-KDH:
-int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session, 
-																				gnutls_buffer_st* data );
-
+int _gnutls_gen_krb_crt(gnutls_session_t session, gnutls_buffer_st* data);
+/*
 int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
-				  uint8_t* data, size_t data_size );			       
+				  uint8_t* data, size_t data_size );*///TODO remove
 // end
 #endif

@@ -1552,7 +1552,7 @@ _gnutls_remove_unwanted_ciphersuites(gnutls_session_t session,
 	}
 
 	/* get all the key exchange algorithms that are 
-	 * supported by the X509 certificate parameters.
+	 * supported by the certificate parameters.
 	 */
 	if ((ret =
 	     _gnutls_selected_cert_supported_kx(session, alg,
