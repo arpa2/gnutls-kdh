@@ -330,7 +330,8 @@ int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
 	auth_hash.size = me->output_size;
 	
 	// Allocate some memory to hold our hash
-	auth_hash.data = gnutls_malloc( me->output_size );
+	//auth_hash.data = gnutls_malloc( me->output_size );
+	auth_hash.data = NULL;
 	
 	if( auth_hash.data == NULL )
 	{
@@ -431,7 +432,7 @@ int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
 			      session );
 			      
 	// Cleanup
-	_gnutls_free_datum( &auth_hash ); //TODO check freeing + enc / dec auths
+	//_gnutls_free_datum( &auth_hash ); //TODO check freeing + enc / dec auths
 			     
 	// All OK 
 	return 0;
