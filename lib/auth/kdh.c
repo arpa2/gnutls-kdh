@@ -333,11 +333,11 @@ int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
 	//auth_hash.data = gnutls_malloc( me->output_size );
 	auth_hash.data = NULL;
 	
-	if( auth_hash.data == NULL )
-	{
-		gnutls_assert();
-		return GNUTLS_E_MEMORY_ERROR;
-	}
+	//if( auth_hash.data == NULL )
+	//{
+	//	gnutls_assert();
+	//	return GNUTLS_E_MEMORY_ERROR;
+	//}
 	
 	/* Initialize the data structure for the decrypted authenticator. It
 	 * has the same size as the encrypted counterpart.
