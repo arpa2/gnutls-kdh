@@ -507,7 +507,7 @@ gen_krb_ecdhe_server_kx(gnutls_session_t session, gnutls_buffer_st * data)
 	 * into session key struct. Auth info remains empty. */
 	if ((ret =
 	     _gnutls_auth_info_set(session, GNUTLS_CRD_CERTIFICATE,
-				   sizeof(anon_auth_info_st), 1)) < 0) {
+				   sizeof(cert_auth_info_st), 1)) < 0) {
 		gnutls_assert();
 		return ret;
 	}
@@ -554,7 +554,7 @@ proc_krb_ecdhe_server_kx( gnutls_session_t session, uint8_t * data,
 	 * TODO: check purpose. Key material is stored directly
 	 * into session key struct. Auth info remains empty. */
 	if( (ret = _gnutls_auth_info_set(session, GNUTLS_CRD_CERTIFICATE,
-				   sizeof(anon_auth_info_st), 1)) < 0 )
+				   sizeof(cert_auth_info_st), 1)) < 0 )
 	{
 		gnutls_assert();
 		return ret;
