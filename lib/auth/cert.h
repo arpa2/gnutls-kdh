@@ -150,9 +150,9 @@ int _gnutls_get_auth_info_pcert(gnutls_pcert_st * gcert,
 
 int certificate_credential_append_crt_list(gnutls_certificate_credentials_t
 					   res, gnutls_str_array_t names,
-					   gnutls_pcert_st * crt, int nr); // why deviate from naming convention for function? no _gnutls prefix
+					   gnutls_pcert_st * crt, int nr); // REMARK: why deviate from naming convention for function? no _gnutls prefix
 int certificate_credentials_append_pkey(gnutls_certificate_credentials_t
-					res, gnutls_privkey_t pkey); // why deviate from naming convention for function? no _gnutls prefix
+					res, gnutls_privkey_t pkey); // REMARK: why deviate from naming convention for function? no _gnutls prefix
 
 int _gnutls_selected_cert_supported_kx(struct gnutls_session_int *session,
 				       gnutls_kx_algorithm_t * alg,
@@ -169,8 +169,5 @@ int _gnutls_proc_dhe_signature(gnutls_session_t session, uint8_t * data,
 
 // ARPA2 added by TomV & RickvR for TLS-KDH:
 int _gnutls_gen_krb_crt(gnutls_session_t session, gnutls_buffer_st* data);
-/*
-int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
-				  uint8_t* data, size_t data_size );*///TODO remove
 // end
 #endif

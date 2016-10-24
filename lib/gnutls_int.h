@@ -545,7 +545,7 @@ typedef struct {
  * see https://tools.ietf.org/html/rfc5246#section-7.4.9.
  * 
  * Choose as max value here at least the highest value that is specified
- * in the ciphersuite definitions. See cihpersuites.c
+ * in the ciphersuite definitions. See ciphersuites.c
  * 
  * For completeness:
  * - SSL 3.0 uses 36
@@ -1153,7 +1153,8 @@ inline static size_t max_user_send_size(gnutls_session_t session,
 /* The mode check occurs a lot throughout GNUTLS and can be replaced by 
  * the following shorter function call. Also easier to update one function
  * in the future when the internal structure changes than all the conditionals
- * itself. */
+ * itself. 
+ */
 inline static int _gnutls_server_mode( gnutls_session_t session ) 
 {
 	return session->security_parameters.entity == GNUTLS_SERVER;

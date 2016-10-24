@@ -85,7 +85,7 @@ gnutls_certificate_type_t gnutls_certificate_type_get_id(const char *name)
 static const gnutls_certificate_type_t supported_certificate_types[] = {
 	GNUTLS_CRT_X509,
 	GNUTLS_CRT_OPENPGP,
-	//GNUTLS_CRT_RAW, //TODO enable when full support implemented
+	//GNUTLS_CRT_RAW, //TODO enable when full support is implemented
 	GNUTLS_CRT_KRB,
 	0
 };

@@ -181,8 +181,6 @@ static const int _kx_priority_performance[] = {
 	GNUTLS_KX_ECDHE_RSA,
 	// ARPA2 added by TomV & RickvR for TLS-KDH: 
 	GNUTLS_KX_ECDHE_KRB,
-	//GNUTLS_KX_ECDHE_KRB_RSA,
-	//GNUTLS_KX_ECDHE_KRB_ECDSA,
 	// end
 #endif
 #ifdef ENABLE_DHE
@@ -198,8 +196,6 @@ static const int _kx_priority_pfs[] = {
 	GNUTLS_KX_ECDHE_RSA,
 	// ARPA2 added by TomV for TLS-KDH: 
 	GNUTLS_KX_ECDHE_KRB,
-	//GNUTLS_KX_ECDHE_KRB_ECDSA,
-	//GNUTLS_KX_ECDHE_KRB_RSA,
 	// end
 #endif
 #ifdef ENABLE_DHE
@@ -224,8 +220,6 @@ static const int _kx_priority_secure[] = {
 	GNUTLS_KX_ECDHE_RSA,
 	// ARPA2 added by TomV & RickvR for TLS-KDH: 
 	GNUTLS_KX_ECDHE_KRB,
-	//GNUTLS_KX_ECDHE_KRB_ECDSA,
-	//GNUTLS_KX_ECDHE_KRB_RSA,
 	// end
 #endif
 	GNUTLS_KX_RSA,
@@ -468,7 +462,7 @@ static const int cert_type_priority_all[] = {
 	GNUTLS_CRT_X509,
 	GNUTLS_CRT_OPENPGP,
 	GNUTLS_CRT_KRB,
-	//TODO insert RAW type when support fully implemented
+	// GNUTLS_CRT_RAW //TODO uncomment when support is fully implemented
 	0
 };
 

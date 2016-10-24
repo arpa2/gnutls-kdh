@@ -110,57 +110,6 @@ const mod_auth_st ecdhe_krb_auth_struct = { // For KDH-only mode
 	_gnutls_proc_cert_krb_authenticator,
 	_gnutls_proc_cert_cert_req
 };
-/*
-const mod_auth_st ecdhe_krb_anon_auth_struct = {
-	"ECDHE_KRB_ANON",
-	NULL, // server is anonymous, so no server cert
-	_gnutls_gen_cert_client_crt,//OK
-	gen_krb_ecdhe_server_kx, //OK //Kx without signature, no privkey available.
-	_gnutls_gen_ecdh_common_client_kx,
-	_gnutls_gen_cert_client_crt_vrfy, // TODO new function
-	_gnutls_gen_cert_server_cert_req, //OK
-
-	NULL, // server is anonymous, so no server cert processing
-	_gnutls_proc_crt,
-	proc_krb_ecdhe_server_kx,//OK // Kx without signature check.
-	proc_krb_ecdhe_client_kx, //TODO can also be proc_ecdhe_client_kx difference is credential type check
-	_gnutls_proc_cert_client_crt_vrfy, // TODO check to disable?
-	_gnutls_proc_cert_cert_req
-};
-
-const mod_auth_st ecdhe_krb_rsa_auth_struct = {
-	"ECDHE_KRB_RSA",
-	_gnutls_gen_cert_server_crt,
-	_gnutls_gen_cert_client_crt,
-	gen_ecdhe_server_kx, //Kx with signature
-	_gnutls_gen_ecdh_common_client_kx,
-	_gnutls_gen_cert_krb_authenticator,
-	_gnutls_gen_cert_server_cert_req,
-	
-	_gnutls_proc_crt,
-	_gnutls_proc_crt,
-	proc_ecdhe_server_kx,
-	proc_ecdhe_client_kx,
-	_gnutls_proc_cert_krb_authenticator,
-	_gnutls_proc_cert_cert_req
-};
-
-const mod_auth_st ecdhe_krb_ecdsa_auth_struct = {
-	"ECDHE_KRB_ECDSA",
-	_gnutls_gen_cert_server_crt,
-	_gnutls_gen_cert_client_crt,
-	gen_ecdhe_server_kx, //Kx with signature
-	_gnutls_gen_ecdh_common_client_kx,
-	_gnutls_gen_cert_krb_authenticator,
-	_gnutls_gen_cert_server_cert_req,
-	
-	_gnutls_proc_crt,
-	_gnutls_proc_crt,
-	proc_ecdhe_server_kx,
-	proc_ecdhe_client_kx,
-	_gnutls_proc_cert_krb_authenticator,
-	_gnutls_proc_cert_cert_req
-};*/
 // end 
 
 static int calc_ecdh_key(gnutls_session_t session,

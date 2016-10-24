@@ -75,25 +75,22 @@ int gnutls_certificate_get_krb_ticket( gnutls_certificate_credentials_t cred,
 }																	
 																	
 															
-/** TODO rewrite
+/**
  * gnutls_certificate_set_krb_ticket:
  * @cred: is a #gnutls_certificate_credentials_t type.
  * @ticket: contains a Kerberos ticket.
  *
- * This function sets a certificate/private key pair in the
- * gnutls_certificate_credentials_t type.  This function may be
- * called more than once (in case multiple keys/certificates exist
- * for the server).
- *
- * Note that this function requires that the preferred key ids have
- * been set and be used. See gnutls_openpgp_crt_set_preferred_key_id().
- * Otherwise the master key will be used.
+ * This function sets a Kerberos ticket in the 
+ * gnutls_certificate_credentials_t type to be used for Kerberos 
+ * authentication. This function is usually called by the client but it
+ * can also be called by the server when Kerberos user-to-user
+ * authentication is desired.
  *
  * Returns: On success, %GNUTLS_E_SUCCESS (0) is returned,
  *   otherwise a negative error code is returned.
  **/																
 int gnutls_certificate_set_krb_ticket( gnutls_certificate_credentials_t cred,
-																	const gnutls_datum_t* ticket )
+																			const gnutls_datum_t* ticket )
 {
 	int ret;
 	gnutls_privkey_t privkey;

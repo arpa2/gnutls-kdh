@@ -77,7 +77,7 @@ typedef enum CertificateSigType {
 	RSA_SIGN = 1, 
 	DSA_SIGN = 2, 
 	ECDSA_SIGN = 64,
-	KRB_SIGN = 224
+	KRB_SIGN = 224 //TODO assign definite number
 } CertificateSigType;
 
 /* Copies data from an internal certificate struct (gnutls_pcert_st) to 
@@ -560,7 +560,11 @@ call_get_cert_callback(gnutls_session_t session,
 		gnutls_assert();
 		return GNUTLS_E_INTERNAL_ERROR;
 	}
-
+	
+	/* We don't support Kerberos ticket retrieval via the old callback.
+	 * Therefore the code below isn't adapted to accommodate Kerberos
+	 * tickets. */
+	
 	if (ret < 0) {
 		gnutls_assert();
 		return GNUTLS_E_USER_ERROR;
@@ -574,7 +578,7 @@ call_get_cert_callback(gnutls_session_t session,
 		ret = GNUTLS_E_INVALID_REQUEST;
 		goto cleanup;
 	}
-	//TODO add Krb support or not?
+	
 	if (type == GNUTLS_CRT_X509) {
 		local_certs =
 		    alloc_and_load_x509_certs(st2.cert.x509, st2.ncerts);
@@ -1023,7 +1027,7 @@ _gnutls_gen_krb_crt(gnutls_session_t session, gnutls_buffer_st* data)
 	// Retrieve the appropriate certificate
 	if( (ret = _gnutls_get_selected_cert( session, &apr_cert_list,
 				       &apr_cert_list_length, &apr_pkey )) < 0 )
-	{
+	{/*TODO remove when tested:
 		if( _gnutls_server_mode( session ) )
 		{
 			// In KDH-only mode a server certificate is optional.
@@ -1032,10 +1036,22 @@ _gnutls_gen_krb_crt(gnutls_session_t session, gnutls_buffer_st* data)
 			// In KDH-only mode a client certificate is obligatory.
 			gnutls_assert();		
 			return ret;
-		}
+		}*/ // end remove
+		/* A certificate is mandatory for both client and server. The server
+		 * may send an empty certificate to indicate normal Kerberos
+		 * authentication via a client ticket. In case of user-to-user
+		 * authentication the server sends a TGT instead of an empty
+		 * certificate.
+		 */
+		gnutls_assert();
+		return ret;
 	}
-	//TODO comment for server ticket case...
-	// We should have exactly one certificate containing our ticket.
+	
+	/* We should have exactly one certificate containing our ticket.
+	 * This is either a regular client ticket with which mutual
+	 * authentication can be established, or a ticket granting ticket
+	 * (TGT) with which user-to-user authentication can be facilitated.
+	 */
 	if( apr_cert_list_length == 1 )
 	{
 	/* Write our certificate to the output buffer. We always have exactly
@@ -1999,7 +2015,9 @@ _gnutls_gen_cert_server_cert_req(gnutls_session_t session,
 	tmp_data[2] = DSA_SIGN;
 	tmp_data[3] = ECDSA_SIGN;
 	tmp_data[4] = KRB_SIGN; /* only these for now */
-	//TODO make compatible with rfc7250
+	/* REMARK: why are these hardcoded? Should these depend on the 
+	 * negotiated kx or cert types?
+	 */
 
 	ret = _gnutls_buffer_append_data(data, tmp_data, CERTTYPE_SIZE);
 	if (ret < 0)

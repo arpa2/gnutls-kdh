@@ -85,7 +85,7 @@ _gnutls_get_public_rsa_params(gnutls_session_t session,
 	/* IMPORTANT:
 	 * Currently this function gets only called on the client side
 	 * during generation of the client kx msg. This function
-	 * retrieves the RSA params from the peer's cerificate. That is in
+	 * retrieves the RSA params from the peer's certificate. That is in
 	 * this case the server's certificate. As of GNUTLS version TODO it is
 	 * possible to negotiate different certificate types for client and
 	 * server. Therefor the correct cert type needs to be retrieved here

@@ -655,7 +655,7 @@ typedef enum gnutls_certificate_print_formats {
  * @GNUTLS_PK_DSA: DSA public-key algorithm.
  * @GNUTLS_PK_DH: Diffie-Hellman algorithm. Used to generate parameters.
  * @GNUTLS_PK_EC: Elliptic curve algorithm. Used to generate parameters.
- * @GNUTLS_PK_KDH: TODO comment
+ * @GNUTLS_PK_KDH: Kerberos Diffie-Hellman algorithm. Used to generate parameters.
  *
  * Enumeration of different public-key algorithms.
  */
@@ -1674,8 +1674,6 @@ int gnutls_certificate_set_krb_ticket( gnutls_certificate_credentials_t cred,
 int gnutls_certificate_get_krb_ticket( gnutls_certificate_credentials_t cred,
 																	unsigned index,
 																	gnutls_datum_t* ticket );
-
-//TODO future: add functions for raw certificates
 // end
 
 /* global state functions
@@ -2085,7 +2083,6 @@ typedef struct gnutls_retr2_st {
 	union {
 		gnutls_x509_crt_t *x509;
 		gnutls_openpgp_crt_t pgp;
-		//TODO: kdh?
 	} cert;
 	unsigned int ncerts;	/* one for pgp keys */
 
@@ -2093,7 +2090,6 @@ typedef struct gnutls_retr2_st {
 		gnutls_x509_privkey_t x509;
 		gnutls_openpgp_privkey_t pgp;
 		gnutls_pkcs11_privkey_t pkcs11;
-		//TODO: kdh?
 	} key;
 
 	unsigned int deinit_all;	/* if non zero all keys will be deinited */

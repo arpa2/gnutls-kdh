@@ -136,7 +136,7 @@ int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session,
 		/* First we are going to hash all the handshake messages passed
 		 * back and forth thusfar, just as for the regular client
 		 * certificate verifiy message. However, we are not going to sign
-		 * this hash because we don't have a pki in place.
+		 * this hash because we don't have a PKI in place.
 		 */
 		me = hash_to_entry( gnutls_sign_get_hash_algorithm( sh_algo ) );
 
@@ -197,6 +197,9 @@ int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session,
 		{
 			/* Note: this function should be called after the kx has finished
 			 * because it relies on the established DH key (session.key.key).
+			 * 
+			 * The decrypted Kerberos authenticator will be used as a source
+			 * of entropy for the premaster secret computation.
 			 */ 
 			ret = _gnutls_set_kdh_pms( session, &dec_authenticator );
 			
@@ -208,8 +211,8 @@ int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session,
 		}
 		
 		// Cleanup
-		_gnutls_free_datum( &enc_authenticator ); //TODO check of nodig en plaats bepalen
-		_gnutls_free_datum( &dec_authenticator ); //TODO idem
+		_gnutls_free_datum( &enc_authenticator ); //TODO with Rick: check of nodig en plaats bepalen
+		_gnutls_free_datum( &dec_authenticator ); //TODO with Rick: idem
 		
 		// Log our choice for debugging
 		_gnutls_debug_log("sign handshake cert vrfy: picked %s with %s\n",
@@ -329,18 +332,11 @@ int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
 	// Set the size of our hash
 	auth_hash.size = me->output_size;
 	
-	// Allocate some memory to hold our hash
-	//auth_hash.data = gnutls_malloc( me->output_size );
+	// The user will allocate some memory and overwrite/set our pointer
 	auth_hash.data = NULL;
 	
-	//if( auth_hash.data == NULL )
-	//{
-	//	gnutls_assert();
-	//	return GNUTLS_E_MEMORY_ERROR;
-	//}
-	
 	/* Initialize the data structure for the decrypted authenticator. It
-	 * has the same size as the encrypted counterpart.
+	 * has the same size as its encrypted counterpart.
 	 */
 	dec_authenticator.size = auth_len;
 	dec_authenticator.data = gnutls_malloc( auth_len );
@@ -416,8 +412,10 @@ int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
 	{
 		/* Note: this function should be called after the kx has finished
 		 * because it relies on the established DH key (session.key.key).
+		 * 
+		 * The decrypted Kerberos authenticator will be used as a source
+		 * of entropy for the premaster secret computation.
 		 */
-		//TODO uitleg omtrent dec auth...
 		ret = _gnutls_set_kdh_pms( session, &dec_authenticator );
 		
 		if( ret < 0 )
@@ -433,6 +431,7 @@ int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
 			      
 	// Cleanup
 	//_gnutls_free_datum( &auth_hash ); //TODO check freeing + enc / dec auths
+	//TODO check with Rick: moeten we dec_auth.. free-en hier?
 			     
 	// All OK 
 	return 0;
@@ -442,7 +441,7 @@ int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
  * KDH-only ciphersuites. It is based on the established DH key and the
  * client kerberos authenticator in decrypted form.
  * 
- * KDH only premaster secret: 
+ * KDH-only premaster secret: 
  * (uint16) DH key size
  * ++
  * (uint8[]) DH key

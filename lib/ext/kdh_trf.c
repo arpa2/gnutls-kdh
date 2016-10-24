@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  *
  * This file is part of the TLS-KDH Ticket Request Flags extension as
- * defined in TODO.
+ * defined in draft-vanrein-tls-kdh-04.
  */
 
 #include <gnutls_int.h>
@@ -50,12 +50,12 @@ extension_entry_st ext_mod_kdh_trf = {
 };
 
 
-/**
+/*
  * Read the Ticket Request Flags as a byte sequence from the IO buffer
  * and decode them to the internal ticket request flags structure.
  * 
  * Returns 0 on success or a negative error code on failure.
- **/
+ */
 static int
 _gnutls_kdh_trf_recv_params( gnutls_session_t session, const uint8_t* data,
                      size_t data_size )
@@ -99,13 +99,13 @@ _gnutls_kdh_trf_recv_params( gnutls_session_t session, const uint8_t* data,
   return 0;
 }
 
-/**
+/*
  * Encode the Ticket Request Flags as a byte sequence onto the IO buffer
  * ready for sending over the wire.
  * 
  * Returns the number of octets written to the buffer on success or a
  * negative error code on failure.
- **/
+ */
 static int
 _gnutls_kdh_trf_send_params( gnutls_session_t session, gnutls_buffer_st* data )
 {

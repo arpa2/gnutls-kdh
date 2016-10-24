@@ -395,8 +395,8 @@ inline static int _gnutls_num2cert_type( int num )
 			return GNUTLS_CRT_OPENPGP;
 		case 2:
 			return GNUTLS_CRT_RAW;
-		case 224:
-			return GNUTLS_CRT_KRB; //TODO update to definite version
+		case 224: //TODO update to definite identifier
+			return GNUTLS_CRT_KRB; 
 		default:
 			return GNUTLS_E_RECEIVED_ILLEGAL_PARAMETER;
 	}
@@ -415,7 +415,7 @@ inline static int _gnutls_cert_type2num( int cert_type )
 		case GNUTLS_CRT_RAW:
 			return 2;
 		case GNUTLS_CRT_KRB:
-			return 224; //TODO update to definite version
+			return 224; //TODO update to definite identifier
 		default:
 			return GNUTLS_E_RECEIVED_ILLEGAL_PARAMETER;
 	}

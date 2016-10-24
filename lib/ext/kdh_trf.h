@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  *
  * This file is part of the TLS-KDH Ticket Request Flags extension as
- * defined in TODO.
+ * defined in draft-vanrein-tls-kdh-04.
  */
 
 #ifndef EXT_KDH_TRF_H

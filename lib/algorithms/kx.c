@@ -42,8 +42,6 @@ extern mod_auth_st srp_rsa_auth_struct;
 extern mod_auth_st srp_dss_auth_struct;
 // ARPA2 added by TomV for TLS-KDH:
 extern mod_auth_st ecdhe_krb_auth_struct;
-//extern mod_auth_st ecdhe_krb_rsa_auth_struct;
-//extern mod_auth_st ecdhe_krb_ecdsa_auth_struct;
 // end
 
 /* Cred type mappings to KX algorithms 
@@ -78,10 +76,6 @@ static const gnutls_cred_map cred_mappings[] = {
 	{GNUTLS_KX_SRP_DSS, GNUTLS_CRD_SRP, GNUTLS_CRD_CERTIFICATE},
 	// ARPA2 added by TomV & RickvR for TLS-KDH:
 	{GNUTLS_KX_ECDHE_KRB, GNUTLS_CRD_CERTIFICATE, GNUTLS_CRD_CERTIFICATE},
-	//{GNUTLS_KX_ECDHE_KRB_ANON, GNUTLS_CRD_CERTIFICATE, GNUTLS_CRD_ANON},
-	//{GNUTLS_KX_ECDHE_KRB_RSA, GNUTLS_CRD_CERTIFICATE, GNUTLS_CRD_CERTIFICATE},
-	//{GNUTLS_KX_ECDHE_KRB_DSS, GNUTLS_CRD_CERTIFICATE, GNUTLS_CRD_CERTIFICATE},
-	//{GNUTLS_KX_ECDHE_KRB_ECDSA, GNUTLS_CRD_CERTIFICATE, GNUTLS_CRD_CERTIFICATE},
 	// end
 	{0, 0, 0}
 };
@@ -119,11 +113,8 @@ static const gnutls_kx_algo_entry _gnutls_kx_algorithms[] = {
 	{"ECDHE-ECDSA", GNUTLS_KX_ECDHE_ECDSA, &ecdhe_ecdsa_auth_struct,
 	 0, GNUTLS_PK_EC},
 // ARPA2 added by TomV & RickvR for TLS-KDH:
-//TODO implment #ifdef ENABLE_KDH
+//TODO implement #ifdef ENABLE_KDH
 	{"ECDHE-KRB", GNUTLS_KX_ECDHE_KRB, &ecdhe_krb_auth_struct, 0, GNUTLS_PK_KDH},
-	//{"ECDHE-KRB-ANON", GNUTLS_KX_ECDHE_KRB_ANON, &ecdh_krb_anon_auth_struct, 0, GNUTLS_PK_UNKNOWN},//TODO choose PK_KDH? Maybe no need for pk_kdh at all?
-	//{"ECDHE-KRB-RSA", GNUTLS_KX_ECDHE_KRB_RSA, &ecdhe_krb_rsa_auth_struct, 0, GNUTLS_PK_RSA},
-	//{"ECDHE-KRB-ECDSA", GNUTLS_KX_ECDHE_KRB_ECDSA, &ecdhe_krb_ecdsa_auth_struct, 0, GNUTLS_PK_EC},
 //TODO implement #endif
 // end
 #endif

@@ -820,7 +820,7 @@ gnutls_ocsp_status_request_is_checked(gnutls_session_t session,
  *
  * Since: 3.1.10
  **/
-char *gnutls_session_get_desc(gnutls_session_t session) //TODO extend
+char *gnutls_session_get_desc(gnutls_session_t session) //TODO adapt for asymmetric cert types
 {
 	gnutls_kx_algorithm_t kx;
 	const char *kx_str;
@@ -838,7 +838,8 @@ char *gnutls_session_get_desc(gnutls_session_t session) //TODO extend
 	kx = session->security_parameters.kx_algorithm;
 
 	if (kx == GNUTLS_KX_ANON_ECDH || kx == GNUTLS_KX_ECDHE_PSK ||
-	    kx == GNUTLS_KX_ECDHE_RSA || kx == GNUTLS_KX_ECDHE_ECDSA) {
+	    kx == GNUTLS_KX_ECDHE_RSA || kx == GNUTLS_KX_ECDHE_ECDSA ||
+	    kx == GNUTLS_KX_ECDHE_KRB) {
 		curve_name =
 		    gnutls_ecc_curve_get_name(gnutls_ecc_curve_get
 					      (session));
