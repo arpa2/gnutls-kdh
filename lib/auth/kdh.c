@@ -211,8 +211,8 @@ int _gnutls_gen_cert_krb_authenticator( gnutls_session_t session,
 		}
 		
 		// Cleanup
-		_gnutls_free_datum( &enc_authenticator ); //TODO with Rick: check of nodig en plaats bepalen
-		_gnutls_free_datum( &dec_authenticator ); //TODO with Rick: idem
+		_gnutls_free_datum( &enc_authenticator );
+		_gnutls_free_datum( &dec_authenticator );
 		
 		// Log our choice for debugging
 		_gnutls_debug_log("sign handshake cert vrfy: picked %s with %s\n",
@@ -430,8 +430,11 @@ int _gnutls_proc_cert_krb_authenticator( gnutls_session_t session,
 			      session );
 			      
 	// Cleanup
-	//_gnutls_free_datum( &auth_hash ); //TODO check freeing + enc / dec auths
-	//TODO check with Rick: moeten we dec_auth.. free-en hier?
+	/* Note: auth_hash is contained in the dec_authenticator. By freeing the latter
+	 * we automatically free the auth_hash. Freeing auth_hash directly results in
+	 * an error and must not be done!
+	 */
+	_gnutls_free_datum( &dec_authenticator );
 			     
 	// All OK 
 	return 0;
