@@ -1496,6 +1496,27 @@ int _gnutls_session_is_ecc(gnutls_session_t session)
 	return _gnutls_kx_is_ecc(kx);
 }
 
+/*-
+ * _gnutls_session_is_kdh - Used to check whether this session uses KDH kx
+ * @session: is a #gnutls_session_t type.
+ *
+ * This function will return non zero if this session uses a Kerberos
+ * Diffie-Hellman key exchange exchange algorithm.
+ -*/
+int _gnutls_session_is_kdh(gnutls_session_t session)
+{
+	gnutls_kx_algorithm_t kx;
+
+	/* We get the key exchange algorithm through the ciphersuite because
+	 * the negotiated key exchange might not have been set yet.
+	 */
+	kx = _gnutls_cipher_suite_get_kx_algo(session->security_parameters.
+					      cipher_suite);
+	if (kx == GNUTLS_KX_ECDHE_KRB )	return 1;
+
+	return 0;
+}
+
 /**
  * gnutls_session_get_ptr:
  * @session: is a #gnutls_session_t type.

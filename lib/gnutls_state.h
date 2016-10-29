@@ -94,6 +94,8 @@ int _gnutls_session_is_resumable(gnutls_session_t session);
 
 int _gnutls_session_is_psk(gnutls_session_t session);
 
+int _gnutls_session_is_kdh(gnutls_session_t session);
+
 int _gnutls_openpgp_send_fingerprint(gnutls_session_t session);
 
 int _gnutls_PRF(gnutls_session_t session,

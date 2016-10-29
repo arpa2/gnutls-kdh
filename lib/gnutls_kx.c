@@ -633,33 +633,9 @@ int _gnutls_recv_server_certificate(gnutls_session_t session)
 {
 	gnutls_buffer_st buf;
 	int ret = 0;
-	gnutls_kx_algorithm_t kx;
 
 	if (session->internals.auth_struct->
 	    gnutls_process_server_certificate != NULL) {
-				
-		/* For TLS-KDH (KDH-only mode) a server certificate is optional. 
-		 * Even if the auth struct defines a processing routine this message
-		 * should not always be expected. It depends on the negotiated kx 
-		 * algo and the negotiated server cert type.
-		 *
-		 * The kx is not set in the security params at this point. We derive
-		 * it from the cipher suite.
-		 */
-		kx = _gnutls_cipher_suite_get_kx_algo( session->security_parameters.cipher_suite );
-		
-		if( kx == GNUTLS_KX_ECDHE_KRB && 
-				session->security_parameters.server_cert_type != GNUTLS_CRT_KRB )
-		{		
-			/* We are in KDH-only mode but have not negotiated a krb cert type
-			 * for the server. We therefore do not expect a server cert. Other
-			 * cert types might have been selected because of credentials that
-			 * are provided but are not used or because of a default value. 
-			 * Cert types other than krb cert types are not valid in KDH-only 
-			 * mode and must therefore be ignored.
-			 */
-			return 0;
-		}
 
 		ret =
 		    _gnutls_recv_handshake(session,
