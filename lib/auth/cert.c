@@ -2371,7 +2371,7 @@ _gnutls_server_select_cert(gnutls_session_t session,
 	 * use it and leave.
 	 */
 	if (cred->get_cert_callback
-	    || cred->get_cert_callback2) { // REMARK: why callback and not callback2?
+	    || cred->get_cert_callback2) {
 		ret = call_get_cert_callback(session, NULL, 0, NULL, 0);
 		if (ret < 0)
 			return gnutls_assert_val(ret);

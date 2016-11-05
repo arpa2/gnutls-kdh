@@ -46,7 +46,6 @@
 #include <ext/etm.h>
 #include <gnutls_num.h>
 // ARPA2 added by TomV for TLS-KDH:
-#include <ext/kdh_trf.h>
 #include <ext/client_cert_type.h>
 #include <ext/server_cert_type.h>
 // end
@@ -393,17 +392,6 @@ int _gnutls_ext_init(void)
 		return ret;
 #endif
 
-	/* ARPA2 added by TomV for TLS-KDH:
-	 * 
-	 * Register KDH Ticket Request Flags extension.
-	 */
-//TODO: implement: #ifdef ENABLE_KDH
-	ret = ext_register(&ext_mod_kdh_trf);
-	if (ret != GNUTLS_E_SUCCESS)
-		return ret;
-//TODO: implement: #endif
-	/* end */
-	
 	/* ARPA2 added by TomV in support for TLS-KDH: 
 	 * 
 	 * See https://tools.ietf.org/html/rfc7250

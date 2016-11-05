@@ -41,7 +41,7 @@ libgnutls_ext_la_SOURCES = max_record.c cert_type.c \
 	session_ticket.c srp.c ecc.c ecc.h heartbeat.c heartbeat.h \
 	status_request.h status_request.c dumbfw.c dumbfw.h \
 	ext_master_secret.c ext_master_secret.h etm.h etm.c \
-	kdh_trf.c kdh_trf.h client_cert_type.c client_cert_type.h \
+	client_cert_type.c client_cert_type.h \
 	server_cert_type.c server_cert_type.h
 
 if ENABLE_ALPN

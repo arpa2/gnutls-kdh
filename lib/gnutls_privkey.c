@@ -1432,6 +1432,7 @@ gnutls_privkey_generate_krb( gnutls_privkey_t pkey, unsigned int flags)
 
 	pkey->type 				 = GNUTLS_PRIVKEY_KRB;
 	pkey->pk_algorithm = GNUTLS_PK_KDH;
+	pkey->flags				 = flags;
 
 	return GNUTLS_E_SUCCESS;
 }

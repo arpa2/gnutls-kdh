@@ -234,17 +234,16 @@ am__libgnutls_ext_la_SOURCES_DIST = max_record.c cert_type.c \
 	safe_renegotiation.h session_ticket.c srp.c ecc.c ecc.h \
 	heartbeat.c heartbeat.h status_request.h status_request.c \
 	dumbfw.c dumbfw.h ext_master_secret.c ext_master_secret.h \
-	etm.h etm.c kdh_trf.c kdh_trf.h client_cert_type.c \
-	client_cert_type.h server_cert_type.c server_cert_type.h \
-	alpn.c alpn.h srtp.c srtp.h
+	etm.h etm.c client_cert_type.c client_cert_type.h \
+	server_cert_type.c server_cert_type.h alpn.c alpn.h srtp.c \
+	srtp.h
 @ENABLE_ALPN_TRUE@am__objects_1 = alpn.lo
 @ENABLE_DTLS_SRTP_TRUE@am__objects_2 = srtp.lo
 am_libgnutls_ext_la_OBJECTS = max_record.lo cert_type.lo \
 	server_name.lo signature.lo safe_renegotiation.lo \
 	session_ticket.lo srp.lo ecc.lo heartbeat.lo status_request.lo \
-	dumbfw.lo ext_master_secret.lo etm.lo kdh_trf.lo \
-	client_cert_type.lo server_cert_type.lo $(am__objects_1) \
-	$(am__objects_2)
+	dumbfw.lo ext_master_secret.lo etm.lo client_cert_type.lo \
+	server_cert_type.lo $(am__objects_1) $(am__objects_2)
 libgnutls_ext_la_OBJECTS = $(am_libgnutls_ext_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -1296,9 +1295,9 @@ libgnutls_ext_la_SOURCES = max_record.c cert_type.c server_name.c \
 	safe_renegotiation.h session_ticket.c srp.c ecc.c ecc.h \
 	heartbeat.c heartbeat.h status_request.h status_request.c \
 	dumbfw.c dumbfw.h ext_master_secret.c ext_master_secret.h \
-	etm.h etm.c kdh_trf.c kdh_trf.h client_cert_type.c \
-	client_cert_type.h server_cert_type.c server_cert_type.h \
-	$(am__append_2) $(am__append_3)
+	etm.h etm.c client_cert_type.c client_cert_type.h \
+	server_cert_type.c server_cert_type.h $(am__append_2) \
+	$(am__append_3)
 all: all-am
 
 .SUFFIXES:
@@ -1361,7 +1360,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/etm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ext_master_secret.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/heartbeat.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/kdh_trf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/max_record.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/safe_renegotiation.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/server_cert_type.Plo@am__quote@

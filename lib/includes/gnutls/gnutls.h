@@ -1207,14 +1207,6 @@ int gnutls_alpn_set_protocols(gnutls_session_t session,
 			      const gnutls_datum_t * protocols,
 			      unsigned protocols_size, unsigned flags);
 
-// ARPA2 added by TomV for TLS-KDH:		      
-/* KDH Ticket Request Flags extension */
-typedef struct gnutls_kdh_trf_st* gnutls_kdh_trf_t;
-
-int gnutls_kdh_trf_get( gnutls_session_t session, gnutls_kdh_trf_t flags );
-int gnutls_kdh_trf_set( gnutls_session_t session, const gnutls_kdh_trf_t flags );
-// end
-
 int gnutls_key_generate(gnutls_datum_t * key, unsigned int key_size);
 
 /* if you just want some defaults, use the following.
